@@ -4,6 +4,10 @@ Rust library to open URLs in the web browsers available on a platform
 
 Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library
 
+[Detailed documentation](http://code.rootnet.in/webbrowser-rs/webbrowser/)
+
+[Crate location](https://crates.io/crates/webbrowser)
+
 ##Examples
 
 ```rust

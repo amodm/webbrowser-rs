@@ -1,0 +1,13 @@
+[package]
+name = "webbrowser"
+description = "A library to open URLs in existing browsers on a platform"
+version = "0.1.0"
+authors = ["amod <amod@rootnet.in>"]
+documentation = "http://code.rootnet.in/webbrowser/doc"
+homepage = "http://code.rootnet.in/webbrowser"
+repository = "https://github.com/amodm/webbrowser.git"
+readme = "README.md"
+keywords = ["webbrowser", "web browser", "browser"]
+license = "MIT"
+
+[dependencies]

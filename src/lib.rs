@@ -16,7 +16,7 @@
 //!
 //! * macos => default, as well as browsers listed under [Browser](enum.Browser.html)
 //! * windows => default browser only
-//! * linux => default browser only
+//! * linux => default browser only (uses $BROWSER env var, failing back to xdg-open)
 //! * android => not supported right now
 //! * ios => not supported right now
 //!
@@ -27,6 +27,7 @@
 
 use std::process::{Command, Output};
 use std::io::{Result, Error, ErrorKind};
+use std::env;
 
 #[derive(Debug)]
 /// Browser types available
@@ -112,7 +113,9 @@ fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
 /// Deal with opening of browsers on Linux, using `xdg-open` command
 fn open_on_linux(browser: Browser, url: &str) -> Result<Output> {
     match browser {
-        Browser::Default => Command::new("xdg-open").arg(url).output(),
+        Browser::Default => Command::new(env::var("BROWSER").or::<Result<String>>(Ok("xdg-open".to_string())).unwrap())
+            .arg(url)
+            .output(),
         _ => Err(Error::new(
                 ErrorKind::NotFound,
                 "Only the default browser is supported on this platform right now"
@@ -126,6 +129,7 @@ fn test_open_default() {
 }
 
 #[test]
+#[cfg(target_os = "macos")]
 fn test_open_browser() {
     assert!(open_browser(Browser::Firefox, "http://github.com").is_ok());
 }

@@ -22,7 +22,7 @@ Currently state of platform support is:
 
 * macos => default, as well as browsers listed under [Browser](enum.Browser.html)
 * windows => default browser only
-* linux => default browser only
+* linux => default browser only (uses $BROWSER env var, failing back to xdg-open if it is not set)
 * android => not supported right now
 * ios => not supported right now
 

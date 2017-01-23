@@ -16,7 +16,8 @@
 //!
 //! * macos => default, as well as browsers listed under [Browser](enum.Browser.html)
 //! * windows => default browser only
-//! * linux => default browser only (uses $BROWSER env var, failing back to xdg-open)
+//! * linux => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open and
+//! gnome-open, in that order)
 //! * android => not supported right now
 //! * ios => not supported right now
 //!
@@ -110,17 +111,48 @@ fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
     }
 }
 
-/// Deal with opening of browsers on Linux, using `xdg-open` command
+/// Deal with opening of browsers on Linux - currently supports only the default browser
+///
+/// The mechanism of opening the default browser is as follows:
+/// 1. Attempt to use $BROWSER env var if available
+/// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, respectively, whichever works
+///    first
 fn open_on_linux(browser: Browser, url: &str) -> Result<Output> {
     match browser {
-        Browser::Default => Command::new(env::var("BROWSER").or::<Result<String>>(Ok("xdg-open".to_string())).unwrap())
-            .arg(url)
-            .output(),
+        Browser::Default => open_on_linux_using_browser_env(url)
+            .or_else(|_| -> Result<Output> {Command::new("xdg-open").arg(url).output()})
+            .or_else(|_| -> Result<Output> {Command::new("gvfs-open").arg(url).output()})
+            .or_else(|_| -> Result<Output> {Command::new("gnome-open").arg(url).output()}),
         _ => Err(Error::new(
                 ErrorKind::NotFound,
                 "Only the default browser is supported on this platform right now"
             ))
     }
+}
+
+/// Open on Linux using the $BROWSER env var
+fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
+    let browsers = try!(env::var("BROWSER").map_err(|_| -> Error {Error::new(ErrorKind::NotFound, format!("BROWSER env not set"))}));
+    for browser in browsers.split(':') { // $BROWSER can contain ':' delimited options, each representing a potential browser command line
+        if !browser.is_empty() {
+            // each browser command can have %s to represent URL, while %c needs to be replaced
+            // with ':' and %% with '%'
+            let cmdline = browser.replace("%s", url).replace("%c", ":").replace("%%", "%");
+            let cmdarr: Vec<&str> = cmdline.split_whitespace().collect();
+            let mut cmd = Command::new(&cmdarr[0]);
+            if cmdarr.len() > 1 {
+                cmd.args(&cmdarr[1..cmdarr.len()]);
+            }
+            if !browser.contains("%s") {
+                // append the url as an argument only if it was not already set via %s
+                cmd.arg(url);
+            }
+            if let Ok(output) = cmd.output() {
+                return Ok(output);
+            }
+        }
+    }
+    return Err(Error::new(ErrorKind::NotFound, "No valid command in $BROWSER"));
 }
 
 #[test]

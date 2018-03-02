@@ -100,10 +100,10 @@ fn open_on_macos(browser: Browser, url: &str) -> Result<Output> {
     }
 }
 
-/// Deal with opening of browsers on Windows, using `start link` command
+/// Deal with opening of browsers on Windows, using `start` command
 fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
     match browser {
-        Browser::Default => Command::new("start").arg("link").arg(url).output(),
+        Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
         _ => Err(Error::new(
                 ErrorKind::NotFound,
                 "Only the default browser is supported on this platform right now"

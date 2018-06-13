@@ -133,7 +133,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
 /// Open on Linux using the $BROWSER env var
 #[cfg(target_os = "linux")]
 fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
-    let browsers = try!(env::var("BROWSER").map_err(|_| -> Error {Error::new(ErrorKind::NotFound, format!("BROWSER env not set"))}));
+    let browsers = env::var("BROWSER").map_err(|_| -> Error { Error::new(ErrorKind::NotFound, format!("BROWSER env not set")) })?;
     for browser in browsers.split(':') { // $BROWSER can contain ':' delimited options, each representing a potential browser command line
         if !browser.is_empty() {
             // each browser command can have %s to represent URL, while %c needs to be replaced

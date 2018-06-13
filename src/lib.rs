@@ -29,8 +29,12 @@
 use std::process::{Command, Output};
 use std::io::{Result, Error, ErrorKind};
 use std::env;
+use std::default::Default;
+use std::fmt;
+use std::str::FromStr;
+use std::error;
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
 pub enum Browser {
     ///Operating system's default browser
@@ -50,6 +54,57 @@ pub enum Browser {
 
     ///Mac OS Safari
     Safari
+}
+
+///The Error type for parsing a string into a Browser.
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+pub struct ParseBrowserError;
+
+impl fmt::Display for ParseBrowserError {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_str("Invalid browser given")
+    }
+}
+
+impl error::Error for ParseBrowserError {
+    fn description(&self) -> &str {
+        "invalid browser"
+    }
+}
+
+impl Default for Browser {
+    fn default() -> Self {
+        Browser::Default
+    }
+}
+
+impl fmt::Display for Browser {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Browser::Default => f.write_str("Default"),
+            Browser::Firefox => f.write_str("Firefox"),
+            Browser::InternetExplorer => f.write_str("Internet Explorer"),
+            Browser::Chrome => f.write_str("Chrome"),
+            Browser::Opera => f.write_str("Opera"),
+            Browser::Safari => f.write_str("Safari"),
+        }
+    }
+}
+
+impl FromStr for Browser {
+    type Err = ParseBrowserError;
+
+    fn from_str(s: &str) -> ::std::result::Result<Self, Self::Err> {
+        match s {
+            "firefox" => Ok(Browser::Firefox),
+            "default" => Ok(Browser::Default),
+            "ie" | "internet explorer" | "internetexplorer" => Ok(Browser::InternetExplorer),
+            "chrome" => Ok(Browser::Chrome),
+            "opera" => Ok(Browser::Opera),
+            "safari" => Ok(Browser::Safari),
+            _ => Err(ParseBrowserError)
+        }
+    }
 }
 
 /// Opens the URL on the default browser of this platform

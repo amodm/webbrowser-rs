@@ -1,16 +1,6 @@
-//! Open URLs in the web browsers available on a platform
+//! Open URLs in the web browsers available on a platform.
 //!
-//! Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library
-//!
-//! #Examples
-//!
-//! ```
-//! use webbrowser;
-//! 
-//! if webbrowser::open("http://github.com").is_ok() {
-//!     // ...
-//! }
-//! ```
+//! Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library.
 //!
 //! Currently state of platform support is:
 //!
@@ -24,7 +14,17 @@
 //! Important note:
 //!
 //! * This library requires availability of browsers and a graphical environment during runtime
-//! * `cargo test` will actually open the browser locally
+//! * `cargo test` will actually open the browser locally.
+//!
+//! # Examples
+//!
+//! ```
+//! use webbrowser;
+//! 
+//! if webbrowser::open("http://github.com").is_ok() {
+//!     // ...
+//! }
+//! ```
 
 use std::process::{Command, Output};
 use std::io::{Result, Error, ErrorKind};
@@ -33,18 +33,36 @@ use std::env;
 #[derive(Debug)]
 /// Browser types available
 pub enum Browser {
+    ///Operating system's default browser
     Default,
+
+    ///Mozilla Firefox
     Firefox,
+
+    ///Microsoft's Internet Explorer
     InternetExplorer,
+
+    ///Google Chrome
     Chrome,
+
+    ///Opera
     Opera,
+
+    ///Mac OS Safari
     Safari
 }
 
 /// Opens the URL on the default browser of this platform
 ///
 /// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
-/// there was an error in running the command, or if the browser was not found
+/// there was an error in running the command, or if the browser was not found.
+///
+/// Equivalent to:
+/// ```
+/// # use webbrowser::{Browser, open_browser};
+/// # let url = "http://example.com";
+/// open_browser(Browser::Default, url);
+/// ```
 ///
 /// # Examples
 /// ```
@@ -59,7 +77,7 @@ pub fn open(url: &str) -> Result<Output> {
 }
 
 /// Opens the specified URL on the specific browser (if available) requested. Return semantics are
-/// the same as for [open](fn.open.html)
+/// the same as for [open](fn.open.html).
 ///
 /// # Examples
 /// ```

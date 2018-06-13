@@ -109,49 +109,6 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     }
 }
 
-/*pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
-    let os = std::env::consts::OS;
-    match os {
-        "macos" => open_on_macos(browser, url),
-        "windows" => open_on_windows(browser, url),
-        "linux" => open_on_linux(browser, url),
-        _ => Err(Error::new(ErrorKind::NotFound, format!("Platform {} not yet supported by this library", os)))
-    }
-}
-
-/// Deal with opening of browsers on Mac OS X, using `open` command
-fn open_on_macos(browser: Browser, url: &str) -> Result<Output> {
-    let mut cmd = Command::new("open");
-    match browser {
-        Browser::Default => cmd.arg(url).output(),
-        _ => {
-            let app: Option<&str> = match browser {
-                Browser::Firefox => Some("Firefox"),
-                Browser::Chrome => Some("Google Chrome"),
-                Browser::Opera => Some("Opera"),
-                Browser::Safari => Some("Safari"),
-                _ => None
-            };
-            match app {
-                Some(name) => cmd.arg("-a").arg(name).arg(url).output(),
-                None => Err(Error::new(ErrorKind::NotFound, format!("Unsupported browser {:?}", browser)))
-            }
-        }
-    }
-}
-
-/// Deal with opening of browsers on Windows, using `start` command
-fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
-    match browser {
-        Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
-        _ => Err(Error::new(
-                ErrorKind::NotFound,
-                "Only the default browser is supported on this platform right now"
-            ))
-    }
-}
-
-*/
 /// Deal with opening of browsers on Linux - currently supports only the default browser
 ///
 /// The mechanism of opening the default browser is as follows:

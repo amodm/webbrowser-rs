@@ -69,9 +69,14 @@ pub fn open(url: &str) -> Result<Output> {
 ///     // ...
 /// }
 /// ```
+pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+    open_browser_internal(browser, url)
+}
+
 /// Deal with opening of browsers on Windows, using `start` command
 #[cfg(target_os = "windows")]
-pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+#[inline]
+fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     match browser {
         Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
         _ => Err(Error::new(
@@ -83,7 +88,8 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[cfg(target_os = "macos")]
-fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+#[inline]
+fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     let mut cmd = Command::new("open");
     match browser {
         Browser::Default => cmd.arg(url).output(),
@@ -153,7 +159,8 @@ fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
 /// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, respectively, whichever works
 ///    first
 #[cfg(target_os = "linux")]
-fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+#[inline]
+fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     match browser {
         Browser::Default => open_on_linux_using_browser_env(url)
             .or_else(|_| -> Result<Output> {Command::new("xdg-open").arg(url).output()})

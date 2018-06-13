@@ -69,7 +69,41 @@ pub fn open(url: &str) -> Result<Output> {
 ///     // ...
 /// }
 /// ```
+/// Deal with opening of browsers on Windows, using `start` command
+#[cfg(target_os = "windows")]
 pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+    match browser {
+        Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
+        _ => Err(Error::new(
+            ErrorKind::NotFound,
+            "Only the default browser is supported on this platform right now"
+        ))
+    }
+}
+
+/// Deal with opening of browsers on Mac OS X, using `open` command
+#[cfg(target_os = "macos")]
+fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+    let mut cmd = Command::new("open");
+    match browser {
+        Browser::Default => cmd.arg(url).output(),
+        _ => {
+            let app: Option<&str> = match browser {
+                Browser::Firefox => Some("Firefox"),
+                Browser::Chrome => Some("Google Chrome"),
+                Browser::Opera => Some("Opera"),
+                Browser::Safari => Some("Safari"),
+                _ => None
+            };
+            match app {
+                Some(name) => cmd.arg("-a").arg(name).arg(url).output(),
+                None => Err(Error::new(ErrorKind::NotFound, format!("Unsupported browser {:?}", browser)))
+            }
+        }
+    }
+}
+
+/*pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     let os = std::env::consts::OS;
     match os {
         "macos" => open_on_macos(browser, url),
@@ -111,13 +145,15 @@ fn open_on_windows(browser: Browser, url: &str) -> Result<Output> {
     }
 }
 
+*/
 /// Deal with opening of browsers on Linux - currently supports only the default browser
 ///
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
 /// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, respectively, whichever works
 ///    first
-fn open_on_linux(browser: Browser, url: &str) -> Result<Output> {
+#[cfg(target_os = "linux")]
+fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     match browser {
         Browser::Default => open_on_linux_using_browser_env(url)
             .or_else(|_| -> Result<Output> {Command::new("xdg-open").arg(url).output()})
@@ -131,6 +167,7 @@ fn open_on_linux(browser: Browser, url: &str) -> Result<Output> {
 }
 
 /// Open on Linux using the $BROWSER env var
+#[cfg(target_os = "linux")]
 fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
     let browsers = try!(env::var("BROWSER").map_err(|_| -> Error {Error::new(ErrorKind::NotFound, format!("BROWSER env not set"))}));
     for browser in browsers.split(':') { // $BROWSER can contain ':' delimited options, each representing a potential browser command line
@@ -154,6 +191,9 @@ fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
     }
     return Err(Error::new(ErrorKind::NotFound, "No valid command in $BROWSER"));
 }
+
+#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
+compile_error!("Only Windows, Mac OS and Linux are currently supported");
 
 #[test]
 fn test_open_default() {

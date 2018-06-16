@@ -28,7 +28,6 @@
 
 use std::process::{Command, Output};
 use std::io::{Result, Error, ErrorKind};
-use std::env;
 use std::default::Default;
 use std::fmt;
 use std::str::FromStr;

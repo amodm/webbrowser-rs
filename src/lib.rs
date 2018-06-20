@@ -26,12 +26,12 @@
 //! }
 //! ```
 
-use std::process::{Command, Output};
-use std::io::{Result, Error, ErrorKind};
 use std::default::Default;
-use std::fmt;
-use std::str::FromStr;
 use std::error;
+use std::fmt;
+use std::io::{Error, ErrorKind, Result};
+use std::process::{Command, Output};
+use std::str::FromStr;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -52,7 +52,7 @@ pub enum Browser {
     Opera,
 
     ///Mac OS Safari
-    Safari
+    Safari,
 }
 
 ///The Error type for parsing a string into a Browser.
@@ -101,7 +101,7 @@ impl FromStr for Browser {
             "chrome" => Ok(Browser::Chrome),
             "opera" => Ok(Browser::Opera),
             "safari" => Ok(Browser::Safari),
-            _ => Err(ParseBrowserError)
+            _ => Err(ParseBrowserError),
         }
     }
 }
@@ -153,8 +153,8 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
         Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
         _ => Err(Error::new(
             ErrorKind::NotFound,
-            "Only the default browser is supported on this platform right now"
-        ))
+            "Only the default browser is supported on this platform right now",
+        )),
     }
 }
 
@@ -171,11 +171,14 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
                 Browser::Chrome => Some("Google Chrome"),
                 Browser::Opera => Some("Opera"),
                 Browser::Safari => Some("Safari"),
-                _ => None
+                _ => None,
             };
             match app {
                 Some(name) => cmd.arg("-a").arg(name).arg(url).output(),
-                None => Err(Error::new(ErrorKind::NotFound, format!("Unsupported browser {:?}", browser)))
+                None => Err(Error::new(
+                    ErrorKind::NotFound,
+                    format!("Unsupported browser {:?}", browser),
+                )),
             }
         }
     }
@@ -192,25 +195,30 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
 fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     match browser {
         Browser::Default => open_on_linux_using_browser_env(url)
-            .or_else(|_| -> Result<Output> {Command::new("xdg-open").arg(url).output()})
-            .or_else(|_| -> Result<Output> {Command::new("gvfs-open").arg(url).output()})
-            .or_else(|_| -> Result<Output> {Command::new("gnome-open").arg(url).output()}),
+            .or_else(|_| -> Result<Output> { Command::new("xdg-open").arg(url).output() })
+            .or_else(|_| -> Result<Output> { Command::new("gvfs-open").arg(url).output() })
+            .or_else(|_| -> Result<Output> { Command::new("gnome-open").arg(url).output() }),
         _ => Err(Error::new(
-                ErrorKind::NotFound,
-                "Only the default browser is supported on this platform right now"
-            ))
+            ErrorKind::NotFound,
+            "Only the default browser is supported on this platform right now",
+        )),
     }
 }
 
 /// Open on Linux using the $BROWSER env var
 #[cfg(target_os = "linux")]
 fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
-    let browsers = ::std::env::var("BROWSER").map_err(|_| -> Error { Error::new(ErrorKind::NotFound, format!("BROWSER env not set")) })?;
-    for browser in browsers.split(':') { // $BROWSER can contain ':' delimited options, each representing a potential browser command line
+    let browsers = ::std::env::var("BROWSER")
+        .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, format!("BROWSER env not set")) })?;
+    for browser in browsers.split(':') {
+        // $BROWSER can contain ':' delimited options, each representing a potential browser command line
         if !browser.is_empty() {
             // each browser command can have %s to represent URL, while %c needs to be replaced
             // with ':' and %% with '%'
-            let cmdline = browser.replace("%s", url).replace("%c", ":").replace("%%", "%");
+            let cmdline = browser
+                .replace("%s", url)
+                .replace("%c", ":")
+                .replace("%%", "%");
             let cmdarr: Vec<&str> = cmdline.split_whitespace().collect();
             let mut cmd = Command::new(&cmdarr[0]);
             if cmdarr.len() > 1 {
@@ -225,7 +233,10 @@ fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
             }
         }
     }
-    return Err(Error::new(ErrorKind::NotFound, "No valid command in $BROWSER"));
+    return Err(Error::new(
+        ErrorKind::NotFound,
+        "No valid command in $BROWSER",
+    ));
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]

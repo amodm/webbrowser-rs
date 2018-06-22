@@ -8,7 +8,7 @@ Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) 
 
 [Crate location](https://crates.io/crates/webbrowser)
 
-##Examples
+## Examples
 
 ```rust
 use webbrowser;

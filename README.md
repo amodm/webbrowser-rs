@@ -1,12 +1,13 @@
 # webbrowser
 
+[![Build Status](https://travis-ci.com/amodm/webbrowser-rs.svg?branch=master)](https://travis-ci.com/amodm/webbrowser-rs)
+[![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
+
 Rust library to open URLs in the web browsers available on a platform
 
 Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library
 
 [Detailed documentation](http://code.rootnet.in/webbrowser-rs/webbrowser/)
-
-[Crate location](https://crates.io/crates/webbrowser)
 
 ## Examples
 

@@ -2,6 +2,8 @@
 
 [![Build Status](https://travis-ci.com/amodm/webbrowser-rs.svg?branch=master)](https://travis-ci.com/amodm/webbrowser-rs)
 [![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
+[![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
+[![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)
 
 Rust library to open URLs in the web browsers available on a platform
 

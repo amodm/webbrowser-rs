@@ -11,15 +11,23 @@ matrix:
   allow_failures:
     - rust: nightly
 
-script: |
-  cargo build --verbose &&
-  cargo test  --verbose &&
-  cargo doc   --verbose
+  include:
+
+  - rust: stable
+    script:
+    - cargo test --all --locked --verbose
+    - cargo doc --verbose
+    - rustup component add rustfmt-preview
+    - cargo fmt -- --write-mode=diff
+
+  - rust: nightly
+    script:
+    - cargo test --locked
+    - rustup component add rustfmt-preview
+    - cargo fmt --all -- --check
 
 branches:
   only:
-    - staging # bors r+
-    - trying  # bors try
     - master
 
 deploy:

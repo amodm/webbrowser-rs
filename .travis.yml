@@ -15,6 +15,7 @@ matrix:
 
   - rust: stable
     script:
+    - cargo update
     - cargo test --all --locked --verbose
     - cargo doc --verbose
     - rustup component add rustfmt-preview
@@ -22,6 +23,7 @@ matrix:
 
   - rust: nightly
     script:
+    - cargo update
     - cargo test --locked
     - rustup component add rustfmt-preview
     - cargo fmt --all -- --check

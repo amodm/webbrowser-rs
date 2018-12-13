@@ -18,7 +18,7 @@
 //!
 //! # Examples
 //!
-//! ```
+//! ```no_run
 //! use webbrowser;
 //!
 //! if webbrowser::open("http://github.com").is_ok() {
@@ -112,14 +112,14 @@ impl FromStr for Browser {
 /// there was an error in running the command, or if the browser was not found.
 ///
 /// Equivalent to:
-/// ```
+/// ```no_run
 /// # use webbrowser::{Browser, open_browser};
 /// # let url = "http://example.com";
 /// open_browser(Browser::Default, url);
 /// ```
 ///
 /// # Examples
-/// ```
+/// ```no_run
 /// use webbrowser;
 ///
 /// if webbrowser::open("http://github.com").is_ok() {
@@ -134,7 +134,7 @@ pub fn open(url: &str) -> Result<Output> {
 /// the same as for [open](fn.open.html).
 ///
 /// # Examples
-/// ```
+/// ```no_run
 /// use webbrowser::{open_browser, Browser};
 ///
 /// if open_browser(Browser::Firefox, "http://github.com").is_ok() {

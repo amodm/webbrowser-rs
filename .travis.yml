@@ -18,14 +18,16 @@ matrix:
     - cargo update
     - cargo test --all --locked --verbose
     - cargo doc --verbose
-    - rustup component add rustfmt
+    - rustup component add clippy rustfmt
+    - cargo clippy --all-targets -- -D warnings
     - cargo fmt --all -- --check
 
   - rust: nightly
     script:
     - cargo update
     - cargo test --locked
-    - rustup component add rustfmt
+    - rustup component add clippy rustfmt
+    - cargo clippy --all-targets -- -D warnings
     - cargo fmt --all -- --check
 
 branches:

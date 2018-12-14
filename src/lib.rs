@@ -259,9 +259,8 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
 /// Open on Linux using the $BROWSER env var
 #[cfg(target_os = "linux")]
 fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
-    let browsers = ::std::env::var("BROWSER").map_err(|_| -> Error {
-        Error::new(ErrorKind::NotFound, format!("BROWSER env not set"))
-    })?;
+    let browsers = ::std::env::var("BROWSER")
+        .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "BROWSER env not set") })?;
     for browser in browsers.split(':') {
         // $BROWSER can contain ':' delimited options, each representing a potential browser command line
         if !browser.is_empty() {
@@ -285,10 +284,10 @@ fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
             }
         }
     }
-    return Err(Error::new(
+    Err(Error::new(
         ErrorKind::NotFound,
         "No valid command in $BROWSER",
-    ));
+    ))
 }
 
 #[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]

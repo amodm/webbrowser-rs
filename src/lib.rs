@@ -26,12 +26,29 @@
 //! }
 //! ```
 
+#[cfg(windows)]
+extern crate widestring;
+#[cfg(windows)]
+extern crate winapi;
+
 use std::default::Default;
-use std::error;
-use std::fmt;
 use std::io::{Error, ErrorKind, Result};
-use std::process::{Command, Output};
+use std::process::Output;
 use std::str::FromStr;
+use std::{error, fmt};
+
+#[cfg(windows)]
+use std::os::windows::process::ExitStatusExt;
+#[cfg(windows)]
+use std::process::ExitStatus;
+#[cfg(windows)]
+use std::ptr;
+
+#[cfg(not(windows))]
+use std::process::Command;
+
+#[cfg(windows)]
+use widestring::U16CString;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -145,12 +162,46 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     open_browser_internal(browser, url)
 }
 
-/// Deal with opening of browsers on Windows, using `start` command
+/// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
+/// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
+/// fucntion.
 #[cfg(target_os = "windows")]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
+    use winapi::um::combaseapi::CoInitializeEx;
+    use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
+    use winapi::um::shellapi::ShellExecuteW;
+    use winapi::um::winuser::SW_SHOWNORMAL;
+
     match browser {
-        Browser::Default => Command::new("cmd").arg("/C").arg("start").arg(url).output(),
+        Browser::Default => {
+            static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
+            let url =
+                U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
+            let code = unsafe {
+                let _ = CoInitializeEx(
+                    ptr::null_mut(),
+                    COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
+                );
+                ShellExecuteW(
+                    ptr::null_mut(),
+                    OPEN.as_ptr(),
+                    url.as_ptr(),
+                    ptr::null(),
+                    ptr::null(),
+                    SW_SHOWNORMAL,
+                ) as usize as i32
+            };
+            if code > 32 {
+                Ok(Output {
+                    status: ExitStatus::from_raw(0),
+                    stdout: vec![],
+                    stderr: vec![],
+                })
+            } else {
+                Err(Error::last_os_error())
+            }
+        }
         _ => Err(Error::new(
             ErrorKind::NotFound,
             "Only the default browser is supported on this platform right now",
@@ -246,6 +297,7 @@ compile_error!("Only Windows, Mac OS and Linux are currently supported");
 #[test]
 fn test_open_default() {
     assert!(open("http://github.com").is_ok());
+    assert!(open("http://github.com?dummy_query1=0&dummy_query2=ｎｏｎａｓｃｉｉ").is_ok());
 }
 
 #[test]

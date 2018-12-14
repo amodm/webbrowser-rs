@@ -9,5 +9,7 @@ repository = "https://github.com/amodm/webbrowser-rs"
 readme = "README.md"
 keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
+edition = "2015"
 
-[dependencies]
+[target.'cfg(windows)'.dependencies]
+winapi = { version = "0.3.6", features = ["combaseapi", "objbase", "shellapi", "winerror"] }

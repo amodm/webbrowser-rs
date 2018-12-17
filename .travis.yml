@@ -9,13 +9,8 @@ matrix:
 
   include:
 
-  - rust:
-      - stable
-      - beta
-      - nightly
-    os:
-      - linux
-      - osx
+  - rust: stable
+    os: linux
     script:
       - cargo update
       - cargo test --all --locked --verbose
@@ -24,8 +19,37 @@ matrix:
       - cargo clippy --all-targets -- -D warnings
       - cargo fmt --all -- --check
 
-  - rust:
-      - stable
+  - rust: beta
+    os: linux
+    script:
+      - cargo update
+      - cargo test --all --locked --verbose
+      - cargo doc --verbose
+      - rustup component add clippy rustfmt
+      - cargo clippy --all-targets -- -D warnings
+      - cargo fmt --all -- --check
+
+  - rust: nightly
+    os: linux
+    script:
+      - cargo update
+      - cargo test --all --locked --verbose
+      - cargo doc --verbose
+      - rustup component add clippy rustfmt
+      - cargo clippy --all-targets -- -D warnings
+      - cargo fmt --all -- --check
+
+  - rust: stable
+    os: osx
+    script:
+      - cargo update
+      - cargo test --all --locked --verbose
+      - cargo doc --verbose
+      - rustup component add clippy rustfmt
+      - cargo clippy --all-targets -- -D warnings
+      - cargo fmt --all -- --check
+
+  - rust: stable
     os: windows
     script:
       - cargo update

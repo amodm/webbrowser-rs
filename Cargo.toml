@@ -13,3 +13,4 @@ edition = "2015"
 
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.6", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
+widestring = "0.4.0"

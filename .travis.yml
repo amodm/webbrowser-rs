@@ -1,6 +1,6 @@
 language: rust
 cache: cargo
-env: # required for allow_failures
+env: RUST_BACKTRACE=1
 rust:
   - stable
   - beta

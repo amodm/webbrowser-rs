@@ -1,28 +1,38 @@
 language: rust
 cache: cargo
 env: RUST_BACKTRACE=1
-rust:
-  - stable
-  - beta
-  - nightly
-
-os:
-  - linux
-  - windows
-  - osx
-
-script:
-  - cargo update
-  - cargo test --all --locked --verbose
-  - cargo doc --verbose
-  - rustup component add clippy rustfmt
-  - cargo clippy --all-targets -- -D warnings
-  - cargo fmt --all -- --check
 
 matrix:
   fast_finish: true
   allow_failures:
     - rust: nightly
+
+  include:
+
+  - rust:
+      - stable
+      - beta
+      - nightly
+    os:
+      - linux
+      - osx
+    script:
+      - cargo update
+      - cargo test --all --locked --verbose
+      - cargo doc --verbose
+      - rustup component add clippy rustfmt
+      - cargo clippy --all-targets -- -D warnings
+      - cargo fmt --all -- --check
+
+  - rust:
+      - stable
+    os: windows
+    script:
+      - cargo update
+      - cargo build --all --locked --verbose
+      - rustup component add clippy rustfmt
+      - cargo clippy --all-targets -- -D warnings
+      - cargo fmt --all -- --check
 
 branches:
   only:

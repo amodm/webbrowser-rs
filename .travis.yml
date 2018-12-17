@@ -6,6 +6,11 @@ rust:
   - beta
   - nightly
 
+os:
+  - linux
+  - windows
+  - osx
+
 script:
   - cargo update
   - cargo test --all --locked --verbose

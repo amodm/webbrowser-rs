@@ -14,7 +14,6 @@ matrix:
   include:
 
   - rust: stable
-    env: DEPLOY_GH_PAGES=true
     script:
     - cargo update
     - cargo test --all --locked --verbose
@@ -50,4 +49,4 @@ deploy:
   github-token: $GITHUB_TOKEN
   on:
     branch: master
-    condition: $DEPLOY_GH_PAGES = true
+    group: stable

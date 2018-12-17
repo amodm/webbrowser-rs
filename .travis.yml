@@ -14,6 +14,7 @@ matrix:
   include:
 
   - rust: stable
+    env: DEPLOY_GH_PAGES=true
     script:
     - cargo update
     - cargo test --all --locked --verbose
@@ -22,10 +23,18 @@ matrix:
     - cargo clippy --all-targets -- -D warnings
     - cargo fmt --all -- --check
 
+  - rust: beta
+    script:
+    - cargo update
+    - cargo test --all --locked --verbose
+    - rustup component add clippy rustfmt
+    - cargo clippy --all-targets -- -D warnings
+    - cargo fmt --all -- --check
+
   - rust: nightly
     script:
     - cargo update
-    - cargo test --locked
+    - cargo test --all --locked --verbose
     - rustup component add clippy rustfmt
     - cargo clippy --all-targets -- -D warnings
     - cargo fmt --all -- --check
@@ -41,3 +50,4 @@ deploy:
   github-token: $GITHUB_TOKEN
   on:
     branch: master
+    condition: $DEPLOY_GH_PAGES = true

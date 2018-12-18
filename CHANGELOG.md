@@ -41,7 +41,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Add Apache license [Issue #1](https://github.com/amodm/webbrowser-rs/issues/1)
 
-## 0.1.2 - 2015-12-09 <a name="0.1.2"></a>
+## [0.1.2] - 2015-12-09 <a name="0.1.2"></a>
 ### Added
 - Initial release.
 

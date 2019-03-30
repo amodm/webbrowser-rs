@@ -6,7 +6,7 @@
 //!
 //! * macos => default, as well as browsers listed under [Browser](enum.Browser.html)
 //! * windows => default browser only
-//! * linux => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open and
+//! * linux or *bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open and
 //! gnome-open, in that order)
 //! * android => not supported right now
 //! * ios => not supported right now
@@ -235,13 +235,18 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     }
 }
 
-/// Deal with opening of browsers on Linux - currently supports only the default browser
+/// Deal with opening of browsers on Linux and *BSD - currently supports only the default browser
 ///
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
 /// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, respectively, whichever works
 ///    first
-#[cfg(target_os = "linux")]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     match browser {
@@ -255,9 +260,12 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
         )),
     }
 }
-
-/// Open on Linux using the $BROWSER env var
-#[cfg(target_os = "linux")]
+#[cfg(any(
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
 fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
     let browsers = ::std::env::var("BROWSER")
         .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "BROWSER env not set") })?;
@@ -290,8 +298,15 @@ fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
     ))
 }
 
-#[cfg(not(any(target_os = "windows", target_os = "macos", target_os = "linux")))]
-compile_error!("Only Windows, Mac OS and Linux are currently supported");
+#[cfg(not(any(
+    target_os = "windows",
+    target_os = "macos",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+)))]
+compile_error!("Only Windows, Mac OS, Linux and *BSD are currently supported");
 
 #[test]
 fn test_open_default() {

@@ -250,7 +250,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     match browser {
-        Browser::Default => open_on_linux_using_browser_env(url)
+        Browser::Default => open_on_unix_using_browser_env(url)
             .or_else(|_| -> Result<Output> { Command::new("xdg-open").arg(url).output() })
             .or_else(|_| -> Result<Output> { Command::new("gvfs-open").arg(url).output() })
             .or_else(|_| -> Result<Output> { Command::new("gnome-open").arg(url).output() }),
@@ -266,7 +266,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<Output> {
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-fn open_on_linux_using_browser_env(url: &str) -> Result<Output> {
+fn open_on_unix_using_browser_env(url: &str) -> Result<Output> {
     let browsers = ::std::env::var("BROWSER")
         .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "BROWSER env not set") })?;
     for browser in browsers.split(':') {

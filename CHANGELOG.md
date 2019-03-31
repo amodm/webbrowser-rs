@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.5.0] - 2019-03-31 <a name="0.5.0"></a>
+### Added
+- Add BSD family to supported platforms. [PR #12](https://github.com/amodm/webbrowser-rs/pull/12)
+
 ## [0.4.0] - 2018-12-18 <a name="0.4.0"></a>
 ### Changed
 - Use `ShellExecuteW` on Windows as the earlier approach of using cmd.exe was breaking on
@@ -45,7 +49,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/amodm/webbrowser-rs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/amodm/webbrowser-rs/compare/v0.3.1...v0.4.0
 [0.3.1]: https://github.com/amodm/webbrowser-rs/compare/v0.3.0...v0.3.1
 [0.3.0]: https://github.com/amodm/webbrowser-rs/compare/v0.2.2...v0.3.0

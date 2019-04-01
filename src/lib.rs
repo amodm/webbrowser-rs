@@ -329,7 +329,26 @@ fn test_open_default() {
 }
 
 #[test]
-#[cfg(target_os = "macos")]
-fn test_open_browser() {
+#[ignore]
+fn test_open_firefox() {
     assert!(open_browser(Browser::Firefox, "http://github.com").is_ok());
+}
+
+#[test]
+#[ignore]
+fn test_open_chrome() {
+    assert!(open_browser(Browser::Chrome, "http://github.com").is_ok());
+}
+
+#[test]
+#[ignore]
+#[cfg(target_os = "windows")]
+fn test_open_internet_explorer() {
+    assert!(open_browser(Browser::InternetExplorer, "http://github.com").is_ok());
+}
+
+#[test]
+#[ignore]
+fn test_open_safari() {
+    assert!(open_browser(Browser::Safari, "http://github.com").is_ok());
 }

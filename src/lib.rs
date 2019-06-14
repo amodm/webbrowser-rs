@@ -30,6 +30,8 @@
 extern crate widestring;
 #[cfg(windows)]
 extern crate winapi;
+#[cfg(target_os = "macos")]
+extern crate macos_open;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
@@ -45,11 +47,22 @@ use std::ptr;
 #[cfg(unix)]
 use std::os::unix::process::ExitStatusExt;
 
-#[cfg(not(windows))]
+#[cfg(all(not(target_os = "macos"), not(windows)))]
 use std::process::Command;
 
 #[cfg(windows)]
 use widestring::U16CString;
+
+#[cfg(target_os = "macos")]
+use macos_open::{
+    open as mopen,
+    open_complex as mopen_complex,
+    LSLaunchFlags,
+    app_for_bundle_id,
+};
+
+#[cfg(target_os = "macos")]
+use std::path::PathBuf;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -223,23 +236,47 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     }
 }
 
-/// Deal with opening of browsers on Mac OS X, using `open` command
+#[cfg(target_os = "macos")]
+#[inline]
+fn transform_result(result: Result<Option<PathBuf>>) -> Result<ExitStatus> {
+    match result {
+        Ok(_) => Ok(ExitStatus::from_raw(0)),
+        Err(err) => {
+            println!("{:#?}", err);
+            Err(err)
+        },
+    }
+}
+
+/// Deal with opening of browsers on Mac OS X, using Core Services framework
 #[cfg(target_os = "macos")]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
-    let mut cmd = Command::new("open");
     match browser {
-        Browser::Default => cmd.arg(url).status(),
+        Browser::Default => transform_result(mopen(url)),
         _ => {
             let app: Option<&str> = match browser {
-                Browser::Firefox => Some("Firefox"),
-                Browser::Chrome => Some("Google Chrome"),
-                Browser::Opera => Some("Opera"),
-                Browser::Safari => Some("Safari"),
+                Browser::Firefox => Some("org.mozilla.firefox"),
+                Browser::Chrome => Some("com.google.chrome"),
+                Browser::Opera => Some("com.operasoftware.Opera"),
+                Browser::Safari => Some("com.apple.Safari"),
                 _ => None,
             };
             match app {
-                Some(name) => cmd.arg("-a").arg(name).arg(url).status(),
+                Some(bundle_id) => {
+                    if let Some(browser_path) = app_for_bundle_id(bundle_id) {
+                        transform_result(mopen_complex(
+                            Some(&browser_path),
+                            Some(url),
+                            LSLaunchFlags::DEFAULTS | LSLaunchFlags::ASYNC
+                        ))
+                    } else {
+                        Err(Error::new(
+                            ErrorKind::NotFound,
+                            format!("Not installed browser {:?}", browser)
+                        ))
+                    }
+                },
                 None => Err(Error::new(
                     ErrorKind::NotFound,
                     format!("Unsupported browser {:?}", browser),

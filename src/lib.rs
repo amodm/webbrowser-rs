@@ -26,18 +26,18 @@
 //! }
 //! ```
 
-#[cfg(windows)]
-extern crate widestring;
-#[cfg(windows)]
-extern crate winapi;
-#[cfg(target_os = "macos")]
-extern crate url;
-#[cfg(target_os = "macos")]
-extern crate launch_services;
 #[cfg(target_os = "macos")]
 extern crate core_foundation;
 #[cfg(target_os = "macos")]
 extern crate core_foundation_sys;
+#[cfg(target_os = "macos")]
+extern crate launch_services;
+#[cfg(target_os = "macos")]
+extern crate url;
+#[cfg(windows)]
+extern crate widestring;
+#[cfg(windows)]
+extern crate winapi;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
@@ -61,10 +61,7 @@ use widestring::U16CString;
 
 #[cfg(target_os = "macos")]
 use launch_services::{
-    open_url,
-    open_from_url_spec,
-    application_urls_for_bundle_identifier,
-    LSLaunchFlags,
+    application_urls_for_bundle_identifier, open_from_url_spec, open_url, LSLaunchFlags,
     LSLaunchURLSpec,
 };
 
@@ -73,10 +70,10 @@ use core_foundation_sys::base::{kCFAllocatorDefault, CFAllocatorRef};
 
 #[cfg(target_os = "macos")]
 use core_foundation::{
-    base::TCFType,
-    url::{CFURL, CFURLRef},
-    string::{CFString, CFStringRef},
     array::CFArray,
+    base::TCFType,
+    string::{CFString, CFStringRef},
+    url::{CFURLRef, CFURL},
 };
 
 #[cfg(target_os = "macos")]
@@ -94,7 +91,6 @@ extern "C" {
         baseURL: CFURLRef,
     ) -> CFURLRef;
 }
-
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -384,7 +380,7 @@ fn transform_result(result: Result<Option<PathBuf>>) -> Result<ExitStatus> {
         Err(err) => {
             println!("{:#?}", err);
             Err(err)
-        },
+        }
     }
 }
 
@@ -409,10 +405,10 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
                     } else {
                         Err(Error::new(
                             ErrorKind::NotFound,
-                            format!("Not installed browser {:?}", browser)
+                            format!("Not installed browser {:?}", browser),
                         ))
                     }
-                },
+                }
                 None => Err(Error::new(
                     ErrorKind::NotFound,
                     format!("Unsupported browser {:?}", browser),

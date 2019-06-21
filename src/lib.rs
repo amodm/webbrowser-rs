@@ -31,7 +31,13 @@ extern crate widestring;
 #[cfg(windows)]
 extern crate winapi;
 #[cfg(target_os = "macos")]
-extern crate macos_open;
+extern crate url;
+#[cfg(target_os = "macos")]
+extern crate launch_services;
+#[cfg(target_os = "macos")]
+extern crate core_foundation;
+#[cfg(target_os = "macos")]
+extern crate core_foundation_sys;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
@@ -54,15 +60,41 @@ use std::process::Command;
 use widestring::U16CString;
 
 #[cfg(target_os = "macos")]
-use macos_open::{
-    open as mopen,
-    open_complex as mopen_complex,
+use launch_services::{
+    open_url,
+    open_from_url_spec,
+    application_urls_for_bundle_identifier,
     LSLaunchFlags,
-    app_for_bundle_id,
+    LSLaunchURLSpec,
 };
 
 #[cfg(target_os = "macos")]
-use std::path::PathBuf;
+use core_foundation_sys::base::{kCFAllocatorDefault, CFAllocatorRef};
+
+#[cfg(target_os = "macos")]
+use core_foundation::{
+    base::TCFType,
+    url::{CFURL, CFURLRef},
+    string::{CFString, CFStringRef},
+    array::CFArray,
+};
+
+#[cfg(target_os = "macos")]
+use std::path::{Path, PathBuf};
+
+#[cfg(target_os = "macos")]
+use url::Url;
+
+#[cfg(target_os = "macos")]
+#[link(name = "CoreServices", kind = "framework")]
+extern "C" {
+    fn CFURLCreateWithString(
+        allocator: CFAllocatorRef,
+        urlString: CFStringRef,
+        baseURL: CFURLRef,
+    ) -> CFURLRef;
+}
+
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -238,6 +270,114 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 
 #[cfg(target_os = "macos")]
 #[inline]
+fn sanitize_url(value: &str) -> Option<String> {
+    Some(Url::parse(value).ok()?.into_string())
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+fn str_to_url(value: &str) -> Option<CFURL> {
+    let url = CFString::new(&sanitize_url(value)?);
+
+    let ptr = unsafe {
+        CFURLCreateWithString(
+            kCFAllocatorDefault,
+            url.as_concrete_TypeRef(),
+            std::ptr::null(),
+        )
+    };
+
+    if ptr.is_null() {
+        None
+    } else {
+        Some(unsafe { TCFType::wrap_under_create_rule(ptr) })
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+fn mopen(value: &str) -> Result<Option<PathBuf>> {
+    if let Some(url) = str_to_url(value) {
+        match open_url(&url) {
+            Ok(path) => Ok(path.to_path()),
+            Err(code) => Err(Error::new(
+                ErrorKind::Other,
+                format!("return code {}", code),
+            )),
+        }
+    } else {
+        Err(Error::new(ErrorKind::Other, "Provided url is not openable"))
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+pub fn apps_for_bundle_id(bundle_id: &str) -> Option<Vec<PathBuf>> {
+    let bundle_id = CFString::new(bundle_id);
+    match application_urls_for_bundle_identifier(&bundle_id) {
+        Ok(apps) => Some(apps.iter().filter_map(|v| v.to_path()).collect()),
+        Err(_) => None,
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+pub fn app_for_bundle_id(bundle_id: &str) -> Option<PathBuf> {
+    let mut apps = apps_for_bundle_id(bundle_id)?;
+    if apps.is_empty() {
+        None
+    } else {
+        Some(apps.remove(0))
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+fn remap_app(app: &Path) -> Result<CFURL> {
+    match CFURL::from_path(app, true) {
+        None => Err(Error::new(
+            ErrorKind::Other,
+            "Provided app url is not valid",
+        )),
+        Some(res) => Ok(res),
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+fn remap_url(value: &str) -> Result<CFArray<CFURL>> {
+    let mut res: Vec<CFURL> = Vec::new();
+    match str_to_url(value) {
+        None => return Err(Error::new(ErrorKind::Other, "Provided urls are not valid")),
+        Some(url) => {
+            res.push(url);
+        }
+    }
+
+    Ok(CFArray::<CFURL>::from_CFTypes(&res[..]))
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
+fn mopen_complex(app: &Path, value: &str) -> Result<Option<PathBuf>> {
+    let spec = LSLaunchURLSpec {
+        app: Some(remap_app(app)?),
+        urls: Some(remap_url(value)?),
+        flags: LSLaunchFlags::DEFAULTS | LSLaunchFlags::ASYNC,
+        ..Default::default()
+    };
+
+    match open_from_url_spec(spec) {
+        Ok(path) => Ok(path.to_path()),
+        Err(code) => Err(Error::new(
+            ErrorKind::Other,
+            format!("return code {}", code),
+        )),
+    }
+}
+
+#[cfg(target_os = "macos")]
+#[inline]
 fn transform_result(result: Result<Option<PathBuf>>) -> Result<ExitStatus> {
     match result {
         Ok(_) => Ok(ExitStatus::from_raw(0)),
@@ -265,11 +405,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
             match app {
                 Some(bundle_id) => {
                     if let Some(browser_path) = app_for_bundle_id(bundle_id) {
-                        transform_result(mopen_complex(
-                            Some(&browser_path),
-                            Some(url),
-                            LSLaunchFlags::DEFAULTS | LSLaunchFlags::ASYNC
-                        ))
+                        transform_result(mopen_complex(&browser_path, url))
                     } else {
                         Err(Error::new(
                             ErrorKind::NotFound,

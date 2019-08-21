@@ -186,29 +186,33 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
 #[cfg(target_os = "windows")]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
-    use winapi::um::combaseapi::CoInitializeEx;
+    use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
     use winapi::um::shellapi::ShellExecuteW;
     use winapi::um::winuser::SW_SHOWNORMAL;
-
+    use winapi::shared::winerror::SUCCEEDED;
     match browser {
         Browser::Default => {
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
             let url =
                 U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
             let code = unsafe {
-                let _ = CoInitializeEx(
+                let coinitializeex_result = CoInitializeEx(
                     ptr::null_mut(),
                     COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
                 );
-                ShellExecuteW(
+                let code = ShellExecuteW(
                     ptr::null_mut(),
                     OPEN.as_ptr(),
                     url.as_ptr(),
                     ptr::null(),
                     ptr::null(),
                     SW_SHOWNORMAL,
-                ) as usize as i32
+                ) as usize as i32;
+                if SUCCEEDED(coinitializeex_result) {
+                    CoUninitialize();
+                }
+                code
             };
             if code > 32 {
                 Ok(ExitStatus::from_raw(0))

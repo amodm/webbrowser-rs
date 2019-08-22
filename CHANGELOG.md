@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.5.2] - 2019-08-22 <a name="0.5.2"></a>
+### Fixed
+- Fix a COM leak bug on Windows [PR #15](https://github.com/amodm/webbrowser-rs/pull/15)
+
 ## [0.5.1] - 2019-04-01 <a name="0.5.1"></a>
 ### Fixed
 - Fix the behaviour that open() was blocking on Linux and BSD family. [Issue #13](https://github.com/amodm/webbrowser-rs/issues/13)
@@ -54,7 +58,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.5.1...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.5.2...HEAD
+[0.5.2]: https://github.com/amodm/webbrowser-rs/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/amodm/webbrowser-rs/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/amodm/webbrowser-rs/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/amodm/webbrowser-rs/compare/v0.3.1...v0.4.0

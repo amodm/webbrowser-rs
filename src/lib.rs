@@ -272,6 +272,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
             .or_else(|_| -> Result<ExitStatus> { Command::new("xdg-open").arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> { Command::new("gvfs-open").arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> { Command::new("gnome-open").arg(url).status() })
+            .or_else(|_| -> Result<ExitStatus> { Command::new("kioclient").arg("exec").arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> { Command::new("x-www-browser").arg(url).status() }),
         _ => Err(Error::new(
             ErrorKind::NotFound,

@@ -283,7 +283,12 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
             .or_else(|_| -> Result<ExitStatus> {
                 Command::new("kioclient").arg("exec").arg(url).status()
             })
-            .or_else(|_| -> Result<ExitStatus> { Command::new("x-www-browser").arg(url).status() }),
+            .or_else(|e| -> Result<ExitStatus> {
+                if let Ok(_child) = Command::new("x-www-browser").arg(url).spawn() {
+                    return Ok(ExitStatusExt::from_raw(0));
+                }
+                Err(e)
+            }),
         _ => Err(Error::new(
             ErrorKind::NotFound,
             "Only the default browser is supported on this platform right now",

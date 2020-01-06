@@ -232,6 +232,13 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     }
 }
 
+/// Deal with opening of browsers on Android
+#[cfg(target_os = "android")]
+#[inline]
+fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+    Command::new("am").arg("start").arg("--user").arg("0").arg("-a").arg("android.intent.action.VIEW").arg("-d").arg(url).status()
+}
+
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[cfg(target_os = "macos")]
 #[inline]
@@ -343,6 +350,7 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
 }
 
 #[cfg(not(any(
+    target_os = "android",
     target_os = "windows",
     target_os = "macos",
     target_os = "linux",

@@ -71,6 +71,9 @@ pub enum Browser {
 
     ///Mac OS Safari
     Safari,
+
+    ///Haiku's WebPositive
+    WebPositive,
 }
 
 ///The Error type for parsing a string into a Browser.
@@ -104,6 +107,7 @@ impl fmt::Display for Browser {
             Browser::Chrome => f.write_str("Chrome"),
             Browser::Opera => f.write_str("Opera"),
             Browser::Safari => f.write_str("Safari"),
+            Browser::WebPositive => f.write_str("WebPositive"),
         }
     }
 }
@@ -119,6 +123,7 @@ impl FromStr for Browser {
             "chrome" => Ok(Browser::Chrome),
             "opera" => Ok(Browser::Opera),
             "safari" => Ok(Browser::Safari),
+            "webpositive" => Ok(Browser::WebPositive),
             _ => Err(ParseBrowserError),
         }
     }
@@ -240,6 +245,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
                 Browser::Chrome => Some("Google Chrome"),
                 Browser::Opera => Some("Opera"),
                 Browser::Safari => Some("Safari"),
+                Browser::WebPositive => Some("WebPositive"),
                 _ => None,
             };
             match app {
@@ -257,13 +263,14 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 ///
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
-/// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, respectively, whichever works
+/// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, open, respectively, whichever works
 ///    first
 #[cfg(any(
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "haiku"
 ))]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
@@ -280,6 +287,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
             })
             .or_else(|_| -> Result<ExitStatus> { Command::new("gvfs-open").arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> { Command::new("gnome-open").arg(url).status() })
+            .or_else(|_| -> Result<ExitStatus> { Command::new("open").arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> {
                 Command::new("kioclient").arg("exec").arg(url).status()
             })
@@ -299,7 +307,8 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "haiku"
 ))]
 fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
     let browsers = ::std::env::var("BROWSER")
@@ -339,9 +348,10 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
-    target_os = "openbsd"
+    target_os = "openbsd",
+    target_os = "haiku"
 )))]
-compile_error!("Only Windows, Mac OS, Linux and *BSD are currently supported");
+compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku are currently supported");
 
 #[test]
 fn test_open_default() {
@@ -372,4 +382,10 @@ fn test_open_internet_explorer() {
 #[ignore]
 fn test_open_safari() {
     assert!(open_browser(Browser::Safari, "http://github.com").is_ok());
+}
+
+#[test]
+#[ignore]
+fn test_open_webpositive() {
+    assert!(open_browser(Browser::WebPositive, "http://github.com").is_ok());
 }

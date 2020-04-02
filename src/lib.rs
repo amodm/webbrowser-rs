@@ -168,7 +168,7 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
 pub struct BrowserOptions {
     pub browser: Option<Browser>,
     pub suppress_output: Option<bool>,
-    url: String
+    pub url: String
 }
 
 pub fn open_browser_with_options(options: BrowserOptions) -> Result<Output> {

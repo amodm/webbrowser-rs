@@ -33,7 +33,7 @@ extern crate winapi;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
-use std::process::{ExitStatus, Output};
+use std::process::{ExitStatus, Output, Stdio};
 use std::str::FromStr;
 use std::{error, fmt};
 
@@ -160,7 +160,23 @@ pub fn open(url: &str) -> Result<Output> {
 /// }
 /// ```
 pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
-    open_browser_internal(browser, url).and_then(|status| {
+    open_browser_with_options(BrowserOptions {
+        browser: Some(browser), url: url.into(), suppress_output: Some(false)
+    })
+}
+
+pub struct BrowserOptions {
+    pub browser: Option<Browser>,
+    pub suppress_output: Option<bool>,
+    url: String
+}
+
+pub fn open_browser_with_options(options: BrowserOptions) -> Result<Output> {
+    open_browser_internal(
+        options.browser.unwrap_or(Browser::default()),
+        options.url.as_str(),
+        options.suppress_output.unwrap_or(false)
+    ).and_then(|status| {
         if let Some(code) = status.code() {
             if code == 0 {
                 Ok(Output {
@@ -178,6 +194,7 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
             Err(Error::new(ErrorKind::Other, "interrupted by signal"))
         }
     })
+
 }
 
 /// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
@@ -253,6 +270,14 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     }
 }
 
+fn adapt_command(cmd: &mut Command, suppress_output: bool) -> &mut Command {
+    if suppress_output {
+        cmd.stdout(Stdio::null()).stderr(Stdio::null());
+    }
+
+    cmd
+}
+
 /// Deal with opening of browsers on Linux and *BSD - currently supports only the default browser
 ///
 /// The mechanism of opening the default browser is as follows:
@@ -266,25 +291,25 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     target_os = "openbsd"
 ))]
 #[inline]
-fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+fn open_browser_internal(browser: Browser, url: &str, suppress_output: bool) -> Result<ExitStatus> {
     match browser {
-        Browser::Default => open_on_unix_using_browser_env(url)
-            .or_else(|_| -> Result<ExitStatus> { Command::new("xdg-open").arg(url).status() })
+        Browser::Default => open_on_unix_using_browser_env(url, suppress_output)
+            .or_else(|_| -> Result<ExitStatus> { adapt_command(&mut Command::new("xdg-open"), suppress_output).arg(url).status() })
             .or_else(|r| -> Result<ExitStatus> {
                 if let Ok(desktop) = ::std::env::var("XDG_CURRENT_DESKTOP") {
                     if desktop == "KDE" {
-                        return Command::new("kioclient").arg("exec").arg(url).status();
+                        return adapt_command(&mut Command::new("kioclient"), suppress_output).arg("exec").arg(url).status();
                     }
                 }
                 Err(r) // If either `if` check fails, fall through to the next or_else
             })
-            .or_else(|_| -> Result<ExitStatus> { Command::new("gvfs-open").arg(url).status() })
-            .or_else(|_| -> Result<ExitStatus> { Command::new("gnome-open").arg(url).status() })
+            .or_else(|_| -> Result<ExitStatus> { adapt_command(&mut Command::new("gvfs-open"), suppress_output).arg(url).status() })
+            .or_else(|_| -> Result<ExitStatus> { adapt_command(&mut Command::new("gnome-open"), suppress_output).arg(url).status() })
             .or_else(|_| -> Result<ExitStatus> {
-                Command::new("kioclient").arg("exec").arg(url).status()
+                adapt_command(&mut Command::new("kioclient"), suppress_output).arg("exec").arg(url).status()
             })
             .or_else(|e| -> Result<ExitStatus> {
-                if let Ok(_child) = Command::new("x-www-browser").arg(url).spawn() {
+                if let Ok(_child) = adapt_command(&mut Command::new("x-www-browser"), suppress_output).arg(url).spawn() {
                     return Ok(ExitStatusExt::from_raw(0));
                 }
                 Err(e)
@@ -301,7 +326,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     target_os = "netbsd",
     target_os = "openbsd"
 ))]
-fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
+fn open_on_unix_using_browser_env(url: &str, suppress_output: bool) -> Result<ExitStatus> {
     let browsers = ::std::env::var("BROWSER")
         .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "BROWSER env not set") })?;
     for browser in browsers.split(':') {
@@ -322,7 +347,7 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
                 // append the url as an argument only if it was not already set via %s
                 cmd.arg(url);
             }
-            if let Ok(status) = cmd.status() {
+            if let Ok(status) = adapt_command(&mut cmd, suppress_output).status() {
                 return Ok(status);
             }
         }

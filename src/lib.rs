@@ -124,6 +124,12 @@ impl FromStr for Browser {
     }
 }
 
+pub struct BrowserOptions {
+    pub browser: Option<Browser>,
+    pub suppress_output: Option<bool>,
+    pub url: String,
+}
+
 /// Opens the URL on the default browser of this platform
 ///
 /// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
@@ -165,12 +171,35 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     })
 }
 
-pub struct BrowserOptions {
-    pub browser: Option<Browser>,
-    pub suppress_output: Option<bool>,
-    pub url: String
+impl BrowserOptions {
+    pub fn create(url: &str) -> BrowserOptions {
+        BrowserOptions {
+            browser: None,
+            suppress_output: None,
+            url: url.into()
+        }
+    }
+
+    pub fn create_with_suppressed_output(url: &str) -> BrowserOptions {
+        BrowserOptions {
+            browser: None,
+            suppress_output: Some(true),
+            url: url.into()
+        }
+    }
 }
 
+/// Opens the specified URL on the specific browser (if available) requested. Return semantics are
+/// the same as for [open](fn.open.html).
+///
+/// # Examples
+/// ```no_run
+/// use webbrowser::{open_browser_with_options, BrowserOptions};
+///
+/// if open_browser_with_options(BrowserOptions::create("http://github.com")).is_ok() {
+///     // ...
+/// }
+/// ```
 pub fn open_browser_with_options(options: BrowserOptions) -> Result<Output> {
     open_browser_internal(
         options.browser.unwrap_or(Browser::default()),
@@ -372,6 +401,11 @@ compile_error!("Only Windows, Mac OS, Linux and *BSD are currently supported");
 fn test_open_default() {
     assert!(open("http://github.com").is_ok());
     assert!(open("http://github.com?dummy_query1=0&dummy_query2=ｎｏｎａｓｃｉｉ").is_ok());
+}
+
+#[test]
+fn test_open_with_options() {
+    assert!(open_browser_with_options(BrowserOptions::create("http://github.com")).is_ok());
 }
 
 #[test]

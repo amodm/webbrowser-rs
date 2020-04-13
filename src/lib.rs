@@ -299,6 +299,12 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     }
 }
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd"
+))]
 fn adapt_command(cmd: &mut Command, suppress_output: bool) -> &mut Command {
     if suppress_output {
         cmd.stdout(Stdio::null()).stderr(Stdio::null());

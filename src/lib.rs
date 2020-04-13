@@ -231,7 +231,7 @@ pub fn open_browser_with_options(options: BrowserOptions) -> Result<Output> {
 /// fucntion.
 #[cfg(target_os = "windows")]
 #[inline]
-fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+fn open_browser_internal(browser: Browser, url: &str, _: bool) -> Result<ExitStatus> {
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
@@ -276,7 +276,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[cfg(target_os = "macos")]
 #[inline]
-fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+fn open_browser_internal(browser: Browser, url: &str, _: bool) -> Result<ExitStatus> {
     let mut cmd = Command::new("open");
     match browser {
         Browser::Default => cmd.arg(url).status(),

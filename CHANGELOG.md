@@ -5,6 +5,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.5.4] - 2020-06-09 <a name=0.5.4"></a>
+### Fixed
+- Fix README to reflect platform support for Android and Haiku
+
 ## [0.5.3] - 2020-06-09 <a name=0.5.3"></a>
 ### Changed
 - Added support for Haiku (Untested right now!) [PR #21](https://github.com/amodm/webbrowser-rs/pull/21)

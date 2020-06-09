@@ -1,7 +1,7 @@
 [package]
 name = "webbrowser"
 description = "Open URLs in web browsers available on a platform"
-version = "0.5.3"
+version = "0.5.4"
 authors = ["Amod Malviya @amodm"]
 documentation = "http://code.rootnet.in/webbrowser-rs/webbrowser"
 homepage = "https://github.com/amodm/webbrowser-rs"

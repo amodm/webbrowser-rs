@@ -5,6 +5,12 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [Unreleased]
 
+## [0.5.3] - 2020-06-09 <a name=0.5.3"></a>
+### Changed
+- Added support for Haiku (Untested right now!) [PR #21](https://github.com/amodm/webbrowser-rs/pull/21)
+- Added support for Android [PR #19](https://github.com/amodm/webbrowser-rs/pull/19)
+- Added support for kioclient and x-www-browser [PR #17](https://github.com/amodm/webbrowser-rs/pull/17)
+
 ## [0.5.2] - 2019-08-22 <a name="0.5.2"></a>
 ### Fixed
 - Fix a COM leak bug on Windows [PR #15](https://github.com/amodm/webbrowser-rs/pull/15)

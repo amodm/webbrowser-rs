@@ -29,7 +29,8 @@ Currently state of platform support is:
 * macos => default, as well as browsers listed under [Browser](enum.Browser.html)
 * windows => default browser only
 * linux/*bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open, gnome-open, whichever works first)
-* android => not supported right now
+* android => default browser only
+* haiku => untested and experimental
 * ios => not supported right now
 
 Important note:

@@ -11,6 +11,9 @@ keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
 edition = "2015"
 
+[dependencies]
+wasm-bindgen = "0.2"
+
 [target.'cfg(windows)'.dependencies]
 winapi = { version = "0.3.6", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
 widestring = "0.4.0"

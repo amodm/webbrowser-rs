@@ -240,7 +240,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 }
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
-#[cfg(target_os = "macos")]
+#[cfg(any(target_os = "macos", target_os = "wasm32"))]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     let mut cmd = Command::new("open");
@@ -357,9 +357,10 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
     target_os = "freebsd",
     target_os = "netbsd",
     target_os = "openbsd",
-    target_os = "haiku"
+    target_os = "haiku",
+    target_os = "wasm32"
 )))]
-compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku are currently supported");
+compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
 
 #[test]
 fn test_open_default() {
@@ -384,6 +385,12 @@ fn test_open_chrome() {
 #[cfg(target_os = "windows")]
 fn test_open_internet_explorer() {
     assert!(open_browser(Browser::InternetExplorer, "http://github.com").is_ok());
+}
+
+#[test]
+#[cfg(target_os = "wasm32")]
+fn test_open_default_wasm() {
+    assert!(open("http://github.com").is_ok());
 }
 
 #[test]

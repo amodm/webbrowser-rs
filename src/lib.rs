@@ -51,6 +51,9 @@ use std::process::Command;
 #[cfg(windows)]
 use widestring::U16CString;
 
+#[cfg(target_arch = "wasm32")]
+use web_sys::{Window};
+
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
 pub enum Browser {
@@ -149,8 +152,16 @@ impl FromStr for Browser {
 ///     // ...
 /// }
 /// ```
+#[cfg(not(target_arch = "wasm32"))]
 pub fn open(url: &str) -> Result<Output> {
     open_browser(Browser::Default, url)
+}
+
+#[cfg(target_arch = "wasm32")]
+pub fn open(url: &str) -> Result<()> {
+    let window = web_sys::window().expect("should have a window in this context");
+    window.open_with_url(url);
+    Ok(())
 }
 
 /// Opens the specified URL on the specific browser (if available) requested. Return semantics are
@@ -164,6 +175,7 @@ pub fn open(url: &str) -> Result<Output> {
 ///     // ...
 /// }
 /// ```
+#[cfg(not(target_arch = "wasm32"))]
 pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     open_browser_internal(browser, url).and_then(|status| {
         if let Some(code) = status.code() {
@@ -240,7 +252,7 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 }
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
-#[cfg(any(target_os = "macos", target_os = "wasm32"))]
+#[cfg(target_os = "macos")]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
     let mut cmd = Command::new("open");
@@ -358,7 +370,7 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
-    target_os = "wasm32"
+    target_arch = "wasm32"
 )))]
 compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
 
@@ -387,8 +399,9 @@ fn test_open_internet_explorer() {
     assert!(open_browser(Browser::InternetExplorer, "http://github.com").is_ok());
 }
 
+
 #[test]
-#[cfg(target_os = "wasm32")]
+#[cfg(target_arch = "wasm32")]
 fn test_open_default_wasm() {
     assert!(open("http://github.com").is_ok());
 }

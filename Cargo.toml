@@ -11,8 +11,7 @@ keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
 edition = "2018"
 
-
-[dependencies.web-sys]
+[target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
 version = "0.3.36"
 features = [
   'Window'

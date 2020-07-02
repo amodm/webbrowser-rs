@@ -159,9 +159,14 @@ pub fn open(url: &str) -> Result<Output> {
 
 #[cfg(target_arch = "wasm32")]
 pub fn open(url: &str) -> Result<()> {
-    let window = web_sys::window().expect("should have a window in this context");
-    window.open_with_url(url);
-    Ok(())
+    let window = web_sys::window();
+    match window {
+      Some(w) => {
+        w.open_with_url(url);
+        Ok(())
+      },
+      None => Err(std::io::Error::new(ErrorKind::Other, "should have a window in this context"))
+    }
 }
 
 /// Opens the specified URL on the specific browser (if available) requested. Return semantics are

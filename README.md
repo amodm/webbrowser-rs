@@ -1,6 +1,6 @@
 # webbrowser
 
-[![Build Status](https://travis-ci.com/amodm/webbrowser-rs.svg?branch=master)](https://travis-ci.com/amodm/webbrowser-rs)
+![Build Status](https://github.com/amodm/webbrowser-rs/workflows/CI%20Build/badge.svg)
 [![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
 [![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
 [![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)

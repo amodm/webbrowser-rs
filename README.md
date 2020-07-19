@@ -31,6 +31,7 @@ Currently state of platform support is:
 * linux/*bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open, gnome-open, whichever works first)
 * android => default browser only
 * haiku => untested and experimental
+* wasm -> untested and experimental
 * ios => not supported right now
 
 Important note:

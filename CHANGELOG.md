@@ -4,12 +4,15 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.5.5] - 2020-07-20 <a name="0.5.5"></a>
+### Added
+- Support for WASM [PR #26](https://github.com/amodm/webbrowser-rs/pull/26)
 
-## [0.5.4] - 2020-06-09 <a name=0.5.4"></a>
+## [0.5.4] - 2020-06-09 <a name="0.5.4"></a>
 ### Fixed
 - Fix README to reflect platform support for Android and Haiku
 
-## [0.5.3] - 2020-06-09 <a name=0.5.3"></a>
+## [0.5.3] - 2020-06-09 <a name="0.5.3"></a>
 ### Changed
 - Added support for Haiku (Untested right now!) [PR #21](https://github.com/amodm/webbrowser-rs/pull/21)
 - Added support for Android [PR #19](https://github.com/amodm/webbrowser-rs/pull/19)
@@ -68,7 +71,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.5.2...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.5.5...HEAD
+[0.5.5]: https://github.com/amodm/webbrowser-rs/compare/v0.5.4...v0.5.5
+[0.5.4]: https://github.com/amodm/webbrowser-rs/compare/v0.5.3...v0.5.4
+[0.5.3]: https://github.com/amodm/webbrowser-rs/compare/v0.5.2...v0.5.3
 [0.5.2]: https://github.com/amodm/webbrowser-rs/compare/v0.5.1...v0.5.2
 [0.5.1]: https://github.com/amodm/webbrowser-rs/compare/v0.5.0...v0.5.1
 [0.5.0]: https://github.com/amodm/webbrowser-rs/compare/v0.4.0...v0.5.0

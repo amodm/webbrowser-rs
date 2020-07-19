@@ -8,7 +8,7 @@
 //! * windows => default browser only
 //! * linux or *bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open and
 //! gnome-open, in that order)
-//! * android => not supported right now
+//! * android => default browser only
 //! * ios => not supported right now
 //!
 //! Important note:
@@ -30,6 +30,11 @@
 mod windows;
 #[cfg(windows)]
 use windows::*;
+
+#[cfg(target_os = "android")]
+mod android;
+#[cfg(target_os = "android")]
+use android::*;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
@@ -195,21 +200,6 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
             Err(Error::new(ErrorKind::Other, "interrupted by signal"))
         }
     })
-}
-
-/// Deal with opening of browsers on Android
-#[cfg(target_os = "android")]
-#[inline]
-fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
-    Command::new("am")
-        .arg("start")
-        .arg("--user")
-        .arg("0")
-        .arg("-a")
-        .arg("android.intent.action.VIEW")
-        .arg("-d")
-        .arg(url)
-        .status()
 }
 
 /// Deal with opening of browsers on Mac OS X, using `open` command

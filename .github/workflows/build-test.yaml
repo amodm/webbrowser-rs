@@ -11,12 +11,11 @@ env:
   RUST_BACKTRACE: 1
 
 jobs:
-  build_test:
-    name: Build and Test
-    runs-on: ${{ matrix.os }}
+  build_unix:
+    name: Unix
+    runs-on: ubuntu-latest
     strategy:
       matrix:
-        os: [ubuntu-latest, windows-latest, macos-latest]
         rust: [stable, beta, nightly]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
@@ -30,8 +29,65 @@ jobs:
       - uses: actions-rs/cargo@v1
         with:
           command: build
-      - if: matrix.os != 'ubuntu-latest'
-        uses: actions-rs/cargo@v1
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
+
+  build_windows:
+    name: Windows
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly]
+    continue-on-error: ${{ matrix.rust != 'stable' }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --all --locked --verbose
+      - uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
+
+  build_macos:
+    name: MacOS
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rust: [stable, beta, nightly]
+    continue-on-error: ${{ matrix.rust != 'stable' }}
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          override: true
+          components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
         with:
           command: test
           args: --all --locked --verbose
@@ -45,7 +101,7 @@ jobs:
           args: --all-targets -- -D warnings
 
   build_android:
-    name: Build for Android
+    name: Android
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -75,7 +131,7 @@ jobs:
           args: --all-targets -- -D warnings
 
   build_wasm:
-    name: Build for WASM
+    name: WASM
     runs-on: ubuntu-latest
     strategy:
       matrix:

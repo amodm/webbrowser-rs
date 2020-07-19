@@ -29,7 +29,7 @@
 #[cfg(windows)]
 mod windows;
 #[cfg(windows)]
-use windows::open_browser_internal;
+use windows::*;
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};

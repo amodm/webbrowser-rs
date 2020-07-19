@@ -1,8 +1,9 @@
 extern crate widestring;
 extern crate winapi;
 
-use crate::{Browser, Error, ErrorKind, ExitStatus, Result};
-use std::os::windows::process::ExitStatusExt;
+use crate::{Browser, Error, ErrorKind, Result};
+pub use std::os::windows::process::ExitStatusExt;
+use std::process::ExitStatus;
 use std::ptr;
 use widestring::U16CString;
 

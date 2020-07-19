@@ -52,7 +52,7 @@ use std::process::Command;
 use widestring::U16CString;
 
 #[cfg(target_arch = "wasm32")]
-use web_sys::{Window};
+use web_sys::Window;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -161,11 +161,14 @@ pub fn open(url: &str) -> Result<Output> {
 pub fn open(url: &str) -> Result<()> {
     let window = web_sys::window();
     match window {
-      Some(w) => {
-        w.open_with_url(url);
-        Ok(())
-      },
-      None => Err(std::io::Error::new(ErrorKind::Other, "should have a window in this context"))
+        Some(w) => {
+            w.open_with_url(url);
+            Ok(())
+        }
+        None => Err(std::io::Error::new(
+            ErrorKind::Other,
+            "should have a window in this context",
+        )),
     }
 }
 
@@ -253,7 +256,15 @@ fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
 #[cfg(target_os = "android")]
 #[inline]
 fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
-    Command::new("am").arg("start").arg("--user").arg("0").arg("-a").arg("android.intent.action.VIEW").arg("-d").arg(url).status()
+    Command::new("am")
+        .arg("start")
+        .arg("--user")
+        .arg("0")
+        .arg("-a")
+        .arg("android.intent.action.VIEW")
+        .arg("-d")
+        .arg(url)
+        .status()
 }
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
@@ -403,7 +414,6 @@ fn test_open_chrome() {
 fn test_open_internet_explorer() {
     assert!(open_browser(Browser::InternetExplorer, "http://github.com").is_ok());
 }
-
 
 #[test]
 #[cfg(target_arch = "wasm32")]

@@ -64,9 +64,6 @@ use std::process::{ExitStatus, Output};
 use std::str::FromStr;
 use std::{error, fmt};
 
-#[cfg(unix)]
-use std::os::unix::process::ExitStatusExt;
-
 #[cfg(target_arch = "wasm32")]
 use web_sys::Window;
 

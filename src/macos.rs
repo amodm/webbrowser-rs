@@ -1,4 +1,5 @@
 use crate::{Browser, Error, ErrorKind, Result};
+pub use std::os::unix::process::ExitStatusExt;
 use std::process::{Command, ExitStatus};
 
 /// Deal with opening of browsers on Mac OS X, using `open` command

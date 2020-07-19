@@ -344,13 +344,6 @@ fn test_open_chrome() {
 }
 
 #[test]
-#[ignore]
-#[cfg(target_os = "windows")]
-fn test_open_internet_explorer() {
-    assert!(open_browser(Browser::InternetExplorer, "http://github.com").is_ok());
-}
-
-#[test]
 #[cfg(target_arch = "wasm32")]
 fn test_open_default_wasm() {
     assert!(open("http://github.com").is_ok());

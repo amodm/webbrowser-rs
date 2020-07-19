@@ -52,3 +52,8 @@ pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> 
         )),
     }
 }
+
+#[test]
+fn test_open_internet_explorer() {
+    assert!(open_browser_internal(Browser::InternetExplorer, "http://github.com").is_ok());
+}

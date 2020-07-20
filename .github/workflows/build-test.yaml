@@ -20,20 +20,25 @@ jobs:
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
+        name: Checkout
       - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt, clippy
       - uses: actions-rs/cargo@v1
+        name: Compile
         with:
           command: build
       - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
         with:
           command: fmt
           args: --all -- --check
       - uses: actions-rs/cargo@v1
+        name: Lints
         with:
           command: clippy
           args: --all-targets -- -D warnings
@@ -47,24 +52,30 @@ jobs:
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
+        name: Checkout
       - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt, clippy
       - uses: actions-rs/cargo@v1
+        name: Compile
         with:
           command: build
       - uses: actions-rs/cargo@v1
+        name: Run Tests
         with:
           command: test
           args: --all --locked --verbose
       - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
         with:
           command: fmt
           args: --all -- --check
       - uses: actions-rs/cargo@v1
+        name: Lints
         with:
           command: clippy
           args: --all-targets -- -D warnings
@@ -78,24 +89,30 @@ jobs:
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
+        name: Checkout
       - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt, clippy
       - uses: actions-rs/cargo@v1
+        name: Compile
         with:
           command: build
       - uses: actions-rs/cargo@v1
+        name: Run Tests
         with:
           command: test
           args: --all --locked --verbose
       - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
         with:
           command: fmt
           args: --all -- --check
       - uses: actions-rs/cargo@v1
+        name: Lints
         with:
           command: clippy
           args: --all-targets -- -D warnings
@@ -109,7 +126,9 @@ jobs:
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
+        name: Checkout
       - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
@@ -117,15 +136,18 @@ jobs:
           components: rustfmt, clippy
           target: armv7-linux-androideabi
       - uses: actions-rs/cargo@v1
+        name: Compile
         with:
           use-cross: true
           command: build
           args: --target armv7-linux-androideabi
       - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
         with:
           command: fmt
           args: --all -- --check
       - uses: actions-rs/cargo@v1
+        name: Lints
         with:
           command: clippy
           args: --all-targets -- -D warnings
@@ -139,7 +161,9 @@ jobs:
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
+        name: Checkout
       - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
         with:
           profile: minimal
           toolchain: ${{ matrix.rust }}
@@ -147,15 +171,18 @@ jobs:
           components: rustfmt, clippy
           target: wasm32-unknown-unknown
       - uses: actions-rs/cargo@v1
+        name: Compile
         with:
           use-cross: true
           command: build
           args: --target wasm32-unknown-unknown
       - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
         with:
           command: fmt
           args: --all -- --check
       - uses: actions-rs/cargo@v1
+        name: Lints
         with:
           command: clippy
           args: --all-targets -- -D warnings

@@ -1,11 +1,10 @@
 mod common;
-use common::*;
 
 #[cfg(target_os = "macos")]
 mod tests {
     const TEST_PLATFORM: &str = "macos";
 
-    use super::check_browser;
+    use super::common::check_browser;
     use webbrowser::Browser;
 
     #[actix_rt::test]

@@ -13,7 +13,7 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     if data.tx.send(req.uri().to_string()).is_err() {
         panic!("channel send failed");
     }
-    format!("URI: {}", req.uri())
+    format!("URI: {}\n", req.uri())
 }
 
 pub async fn check_request_received(browser: Browser, uri: String) {

@@ -51,7 +51,7 @@ pub async fn check_request_received(browser: Browser, uri: String) {
     }
 
     // stop the server
-    server.stop(false).await;
+    server.stop(true).await;
 }
 
 pub async fn check_browser(browser: Browser, platform: &str) {

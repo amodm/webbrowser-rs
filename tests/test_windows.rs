@@ -1,13 +1,11 @@
 #[cfg(target_os = "windows")]
 mod common;
-#[cfg(target_os = "windows")]
-use common::*;
 
-#[cfg(all(unix, not(target_os = "macos")))]
+#[cfg(target_os = "windows")]
 mod tests {
     const TEST_PLATFORM: &str = "windows";
 
-    use super::check_browser;
+    use super::common::check_browser;
     use webbrowser::Browser;
 
     #[actix_rt::test]

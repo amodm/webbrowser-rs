@@ -54,8 +54,8 @@ pub async fn check_request_received(browser: Browser, uri: String) {
     server.stop(true).await;
 }
 
-#[cfg(not(target_os = "linux"))]
 pub async fn check_browser(browser: Browser, platform: &str) {
     check_request_received(browser, format!("/{}", platform)).await;
-    check_request_received(browser, format!("/{}/ｎｏｎａｓｃｉｉ", platform)).await;
+    #[cfg(not(all(unix, not(target_os = "macos"))))]
+    check_request_received(browser, format!("/{}?p=ｎｏｎａｓｃｉｉ", platform)).await;
 }

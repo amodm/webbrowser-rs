@@ -232,12 +232,6 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
 compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
 
 #[test]
-fn test_open_default() {
-    assert!(open("http://github.com").is_ok());
-    assert!(open("http://github.com?dummy_query1=0&dummy_query2=ｎｏｎａｓｃｉｉ").is_ok());
-}
-
-#[test]
 #[ignore]
 fn test_open_firefox() {
     assert!(open_browser(Browser::Firefox, "http://github.com").is_ok());

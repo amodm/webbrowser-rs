@@ -42,13 +42,6 @@ jobs:
           command: test
           args: --all --locked --verbose
       - uses: actions-rs/cargo@v1
-        name: Test Lynx
-        env:
-          BROWSER: lynx %s
-        with:
-          command: test
-          args: --all --locked --verbose
-      - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:
           command: fmt

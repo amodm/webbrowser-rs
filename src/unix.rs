@@ -63,13 +63,16 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
                 cmd.arg(url);
             }
 
-            let cmd_result = if is_text_browser(browser_cmd) {
-                cmd.status() // do not spawn a child if it's a text browser
+            if is_text_browser(browser_cmd) {
+                // do not spawn a child if it's a text browser
+                if let Ok(status) = cmd.status() {
+                    return Ok(status);
+                }
             } else {
-                cmd.spawn().status() // spawn a child for a regular browser so we don't block
-            };
-            if let Ok(status) = cmd_result {
-                return Ok(status);
+                // spawn a child for a regular browser so we don't block
+                if let Ok(child) = cmd.spawn() {
+                    return Ok(ExitStatusExt::from_raw(0));
+                }
             }
         }
     }

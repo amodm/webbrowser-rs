@@ -35,9 +35,9 @@ jobs:
       - name: Install Browsers
         run: sudo apt-get -qqy update && sudo apt-get -qqy install lynx links elinks w3m w3m-img
       - uses: actions-rs/cargo@v1
-        name: Test Firefox
+        name: Test Curl
         env:
-          BROWSER: firefox --headless %s
+          BROWSER: curl -fsS %s
         with:
           command: test
           args: --all --locked --verbose

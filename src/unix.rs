@@ -86,7 +86,7 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
 #[inline]
 fn is_text_browser(command: &str) -> bool {
     for browser in TEXT_BROWSERS.iter() {
-        if command == browser || command.ends_with(format!("/{}", browser)) {
+        if &command == browser || command.ends_with(&format!("/{}", browser)) {
             return true;
         }
     }

@@ -53,7 +53,8 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
                 .replace("%c", ":")
                 .replace("%%", "%");
             let cmdarr: Vec<&str> = cmdline.split_whitespace().collect();
-            let mut cmd = Command::new(&cmdarr[0]);
+            let browser_cmd = cmdarr[0];
+            let mut cmd = Command::new(browser_cmd);
             if cmdarr.len() > 1 {
                 cmd.args(&cmdarr[1..cmdarr.len()]);
             }
@@ -61,7 +62,13 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
                 // append the url as an argument only if it was not already set via %s
                 cmd.arg(url);
             }
-            if let Ok(status) = cmd.status() {
+
+            let cmd_result = if is_text_browser(browser_cmd) {
+                cmd.status() // do not spawn a child if it's a text browser
+            } else {
+                cmd.spawn().status() // spawn a child for a regular browser so we don't block
+            };
+            if let Ok(status) = cmd_result {
                 return Ok(status);
             }
         }
@@ -71,3 +78,18 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
         "No valid command in $BROWSER",
     ))
 }
+
+/// Returns true if specified command refers to a known list of text browsers
+#[inline]
+fn is_text_browser(command: &str) -> bool {
+    for browser in TEXT_BROWSERS.iter() {
+        if command == browser || command.ends_with(format!("/{}", browser)) {
+            return true;
+        }
+    }
+    return false;
+}
+
+static TEXT_BROWSERS: [&'static str; 8] = [
+    "lynx", "links", "links2", "elinks", "w3m", "eww", "netrik", "retawq",
+];

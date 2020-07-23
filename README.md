@@ -1,13 +1,14 @@
 # webbrowser
 
+[![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
+[![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
+[![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)
+
 ![Linux Build](https://github.com/amodm/webbrowser-rs/workflows/Linux/badge.svg)
 ![Windows Build](https://github.com/amodm/webbrowser-rs/workflows/Windows/badge.svg)
 ![MacOS Build](https://github.com/amodm/webbrowser-rs/workflows/MacOS/badge.svg)
 ![Android Build](https://github.com/amodm/webbrowser-rs/workflows/Android/badge.svg)
 ![WASM Build](https://github.com/amodm/webbrowser-rs/workflows/WASM/badge.svg)
-[![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
-[![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
-[![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)
 
 Rust library to open URLs in the web browsers available on a platform
 

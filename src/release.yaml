@@ -1,0 +1,91 @@
+name: Release
+
+on:
+  release:
+    types: [ created ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  crates:
+    name: Crates Publish
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        name: Compile
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
+          name: Run Tests
+          with:
+            command: test
+            args: --all --locked --verbose
+      - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        name: Lints
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
+      - uses: actions-rs/cargo@v1
+        name: Publish
+        env:
+          CRATES_TOKEN: ${{ secrets.CRATES_TOKEN }}
+        with:
+          command: publish
+          args: --token "$CRATES_TOKEN" --no-verify --dry-run
+
+  docs:
+    name: Docs
+    needs: crates
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+          components: rustfmt, clippy
+      - uses: actions-rs/cargo@v1
+        name: Compile
+        with:
+          command: build
+      - uses: actions-rs/cargo@v1
+          name: Run Tests
+          with:
+            command: test
+            args: --all --locked --verbose
+      - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        name: Lints
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings
+      - uses: actions-rs/cargo@v1
+        name: Generate Doc
+        with:
+          command: doc
+      - name: Publish
+        run: |
+          echo "Publish using $GITHUB_REF"

@@ -37,7 +37,7 @@ jobs:
       - uses: actions-rs/cargo@v1
         name: Test Firefox
         env:
-          BROWSER: firefox %s
+          BROWSER: firefox --headless %s
         with:
           command: test
           args: --all --locked --verbose

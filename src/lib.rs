@@ -230,33 +230,3 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
     target_arch = "wasm32"
 )))]
 compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
-
-#[test]
-#[ignore]
-fn test_open_firefox() {
-    assert!(open_browser(Browser::Firefox, "http://github.com").is_ok());
-}
-
-#[test]
-#[ignore]
-fn test_open_chrome() {
-    assert!(open_browser(Browser::Chrome, "http://github.com").is_ok());
-}
-
-#[test]
-#[cfg(target_arch = "wasm32")]
-fn test_open_default_wasm() {
-    assert!(open("http://github.com").is_ok());
-}
-
-#[test]
-#[ignore]
-fn test_open_safari() {
-    assert!(open_browser(Browser::Safari, "http://github.com").is_ok());
-}
-
-#[test]
-#[ignore]
-fn test_open_webpositive() {
-    assert!(open_browser(Browser::WebPositive, "http://github.com").is_ok());
-}

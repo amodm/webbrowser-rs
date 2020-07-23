@@ -13,7 +13,7 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     if data.tx.send(req.uri().to_string()).is_err() {
         panic!("channel send failed");
     }
-    format!("URI: {}", req.uri())
+    format!("URI: {}\n", req.uri())
 }
 
 pub async fn check_request_received(browser: Browser, uri: String) {
@@ -56,5 +56,6 @@ pub async fn check_request_received(browser: Browser, uri: String) {
 
 pub async fn check_browser(browser: Browser, platform: &str) {
     check_request_received(browser, format!("/{}", platform)).await;
-    check_request_received(browser, format!("/{}/ｎｏｎａｓｃｉｉ", platform)).await;
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
+    check_request_received(browser, format!("/{}?p=ｎｏｎａｓｃｉｉ", platform)).await;
 }

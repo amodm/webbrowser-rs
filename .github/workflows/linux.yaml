@@ -32,6 +32,15 @@ jobs:
         name: Compile
         with:
           command: build
+      - name: Install Browsers
+        run: sudo apt-get -qqy update && sudo apt-get -qqy install lynx links elinks w3m w3m-img
+      - uses: actions-rs/cargo@v1
+        name: Test Curl
+        env:
+          BROWSER: curl -fsS %s
+        with:
+          command: test
+          args: --all --locked --verbose
       - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:
@@ -42,5 +51,3 @@ jobs:
         with:
           command: clippy
           args: --all-targets -- -D warnings
-
-# TODO:amodm:add deployment of doc

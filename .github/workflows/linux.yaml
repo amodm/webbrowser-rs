@@ -32,10 +32,19 @@ jobs:
         name: Compile
         with:
           command: build
+      - name: Install Browsers
+        run: sudo apt-get -qqy update && sudo apt-get -qqy install lynx links elinks w3m w3m-img
       - uses: actions-rs/cargo@v1
-        name: Run Tests
+        name: Test Firefox
         env:
           BROWSER: firefox %s
+        with:
+          command: test
+          args: --all --locked --verbose
+      - uses: actions-rs/cargo@v1
+        name: Test Lynx
+        env:
+          BROWSER: lynx %s
         with:
           command: test
           args: --all --locked --verbose
@@ -49,5 +58,3 @@ jobs:
         with:
           command: clippy
           args: --all-targets -- -D warnings
-
-# TODO:amodm:add deployment of doc

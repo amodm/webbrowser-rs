@@ -68,11 +68,9 @@ fn open_on_unix_using_browser_env(url: &str) -> Result<ExitStatus> {
                 if let Ok(status) = cmd.status() {
                     return Ok(status);
                 }
-            } else {
+            } else if cmd.spawn().is_ok() {
                 // spawn a child for a regular browser so we don't block
-                if let Ok(child) = cmd.spawn() {
-                    return Ok(ExitStatusExt::from_raw(0));
-                }
+                return Ok(ExitStatusExt::from_raw(0));
             }
         }
     }
@@ -90,9 +88,9 @@ fn is_text_browser(command: &str) -> bool {
             return true;
         }
     }
-    return false;
+    false
 }
 
-static TEXT_BROWSERS: [&'static str; 8] = [
+static TEXT_BROWSERS: [&str; 8] = [
     "lynx", "links", "links2", "elinks", "w3m", "eww", "netrik", "retawq",
 ];

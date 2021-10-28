@@ -2,6 +2,7 @@ extern crate widestring;
 extern crate winapi;
 
 use crate::{Browser, Error, ErrorKind, Result};
+use std::ffi::OsStr;
 pub use std::os::windows::process::ExitStatusExt;
 use std::process::ExitStatus;
 use std::ptr;
@@ -11,7 +12,7 @@ use widestring::U16CString;
 /// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
 /// fucntion.
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+pub fn open_browser_internal<P: AsRef<OsStr>>(browser: Browser, url: P) -> Result<ExitStatus> {
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
@@ -21,7 +22,7 @@ pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> 
         Browser::Default => {
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
             let url =
-                U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
+                U16CString::from_os_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
             let code = unsafe {
                 let coinitializeex_result = CoInitializeEx(
                     ptr::null_mut(),

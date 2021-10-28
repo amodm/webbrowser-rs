@@ -59,6 +59,7 @@ mod unix;
 use unix::*;
 
 use std::default::Default;
+use std::ffi::OsStr;
 use std::io::{Error, ErrorKind, Result};
 use std::process::{ExitStatus, Output};
 use std::str::FromStr;
@@ -166,7 +167,7 @@ impl FromStr for Browser {
 /// }
 /// ```
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open(url: &str) -> Result<Output> {
+pub fn open<P: AsRef<OsStr>>(url: P) -> Result<Output> {
     open_browser(Browser::Default, url)
 }
 
@@ -197,7 +198,7 @@ pub fn open(url: &str) -> Result<()> {
 /// }
 /// ```
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
+pub fn open_browser<P: AsRef<OsStr>>(browser: Browser, url: P) -> Result<Output> {
     open_browser_internal(browser, url).and_then(|status| {
         if let Some(code) = status.code() {
             if code == 0 {

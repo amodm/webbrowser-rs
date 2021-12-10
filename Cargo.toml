@@ -21,6 +21,10 @@ features = [
 winapi = { version = "0.3.6", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
 widestring = "0.4.0"
 
+[target.'cfg(target_os = "android")'.dependencies]
+jni = "0.19"
+ndk-glue = { version = "0.4" }
+
 [dev-dependencies]
 actix-web = "2.0"
 actix-rt = "1.1"

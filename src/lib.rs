@@ -146,7 +146,7 @@ impl FromStr for Browser {
     }
 }
 
-/// Opens the URL on the default browser of this platform
+/// Opens the URL in the default browser of this platform
 ///
 /// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
 /// there was an error in running the command, or if the browser was not found.
@@ -167,7 +167,32 @@ impl FromStr for Browser {
 /// }
 /// ```
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open<P: AsRef<OsStr>>(url: P) -> Result<Output> {
+pub fn open<P: AsRef<str>>(url: P) -> Result<Output> {
+    open_browser(Browser::Default, url.as_ref())
+}
+
+/// Opens the file in the default browser of this platform
+///
+/// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
+/// there was an error in running the command, or if the browser was not found.
+///
+/// Equivalent to:
+/// ```no_run
+/// # use webbrowser::{Browser, open_browser};
+/// # let path = "./example.pdf";
+/// open_browser(Browser::Default, url);
+/// ```
+///
+/// # Examples
+/// ```no_run
+/// use webbrowser;
+///
+/// if webbrowser::open_path("./example.pdf").is_ok() {
+///     // ...
+/// }
+/// ```
+#[cfg(not(target_arch = "wasm32"))]
+pub fn open_path<P: AsRef<OsStr>>(url: P) -> Result<Output> {
     open_browser(Browser::Default, url)
 }
 

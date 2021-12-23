@@ -64,6 +64,7 @@ use std::io::{Error, ErrorKind, Result};
 use std::process::{ExitStatus, Output};
 use std::str::FromStr;
 use std::{error, fmt};
+use std::path::Path;
 
 #[cfg(target_arch = "wasm32")]
 use web_sys::Window;
@@ -192,8 +193,8 @@ pub fn open<P: AsRef<str>>(url: P) -> Result<Output> {
 /// }
 /// ```
 #[cfg(not(target_arch = "wasm32"))]
-pub fn open_path<P: AsRef<OsStr>>(url: P) -> Result<Output> {
-    open_browser(Browser::Default, url)
+pub fn open_path<P: AsRef<Path>>(url: P) -> Result<Output> {
+    open_browser(Browser::Default, url.as_ref())
 }
 
 #[cfg(target_arch = "wasm32")]

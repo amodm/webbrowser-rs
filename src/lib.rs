@@ -185,6 +185,34 @@ pub fn open(url: &str) -> Result<()> {
     }
 }
 
+/// Opens the URL on the default browser of this platform with a target (e.g. "_blank")
+///
+/// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
+/// there was an error in running the command, or if the browser was not found.
+///
+/// # Examples
+/// ```no_run
+/// use webbrowser;
+///
+/// if webbrowser::open_with_target("http://github.com", "_blank").is_ok() {
+///     // ...
+/// }
+/// ```
+#[cfg(target_arch = "wasm32")]
+pub fn open_with_target(url: &str, target: &str) -> Result<()> {
+    let window = web_sys::window();
+    match window {
+        Some(w) => {
+            w.open_with_url_and_target(url, target);
+            Ok(())
+        }
+        None => Err(std::io::Error::new(
+            ErrorKind::Other,
+            "should have a window in this context",
+        )),
+    }
+}
+
 /// Opens the specified URL on the specific browser (if available) requested. Return semantics are
 /// the same as for [open](fn.open.html).
 ///

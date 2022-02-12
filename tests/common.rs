@@ -16,9 +16,10 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     format!("URI: {}", req.uri())
 }
 
-pub async fn check_request_received_using<F>(uri: String, host: &str, op: F) where
-    F: FnOnce(&str) {
-
+pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
+where
+    F: FnOnce(&str),
+{
     // start the server on a random port
     let bind_addr = format!("{}:0", host);
     let (tx, rx) = cbc::bounded(2);
@@ -58,7 +59,8 @@ pub async fn check_request_received_using<F>(uri: String, host: &str, op: F) whe
 pub async fn check_request_received(browser: Browser, uri: String) {
     check_request_received_using(uri, "127.0.0.1", |url| {
         open_browser(browser, url).expect("failed to open browser");
-    }).await;
+    })
+    .await;
 }
 
 #[allow(dead_code)]

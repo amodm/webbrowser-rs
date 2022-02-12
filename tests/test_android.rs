@@ -5,10 +5,10 @@ mod common;
 mod tests {
     const TEST_PLATFORM: &str = "android";
 
+    use super::common::check_request_received_using;
     use std::fs;
     use std::path::PathBuf;
     use std::process::Command;
-    use super::common::check_request_received_using;
 
     // to run this test, run it as:
     // cargo test --test test_android -- --ignored
@@ -27,15 +27,14 @@ mod tests {
             app_dir.push("tests/test-android-app");
             let mut lib_rs = PathBuf::from(&app_dir);
             lib_rs.push("src/lib.rs");
-            let old_code = fs::read_to_string(&lib_rs)
-                .expect("failed to read lib.rs for android app");
+            let old_code =
+                fs::read_to_string(&lib_rs).expect("failed to read lib.rs for android app");
             let new_code = old_code
                 .split('\n')
                 .map(|s| {
                     if s.starts_with("const SERVER_URL") {
                         format!("const SERVER_URL: &str = \"{}\";", url)
-                    }
-                    else {
+                    } else {
                         s.into()
                     }
                 })
@@ -58,7 +57,8 @@ mod tests {
                 apk_run_status.expect("cargo apk failed").success(),
                 "failed to run: cargo apk run"
             );
-        }).await;
+        })
+        .await;
     }
 
     fn get_ipv4_address() -> String {

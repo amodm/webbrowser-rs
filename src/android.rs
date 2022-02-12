@@ -1,7 +1,7 @@
 use crate::{Browser, Error, ErrorKind, Result};
 use jni::objects::JValue;
 pub use std::os::unix::process::ExitStatusExt;
-use std::process::{Command, ExitStatus};
+use std::process::ExitStatus;
 
 /// Deal with opening of browsers on Android
 #[inline]

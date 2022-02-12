@@ -1,0 +1,14 @@
+[package]
+name = "test-android-app"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "test_android_app"
+crate-type = ["lib", "cdylib"]
+
+[dependencies]
+jni = "0.19"
+ndk-glue = "0.6"
+webbrowser = { path = "../.." }
+

@@ -16,9 +16,11 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     format!("URI: {}", req.uri())
 }
 
-pub async fn check_request_received(browser: Browser, uri: String) {
+pub async fn check_request_received_using<F>(uri: String, host: &str, op: F) where
+    F: FnOnce(&str) {
+
     // start the server on a random port
-    let bind_addr = "127.0.0.1:0";
+    let bind_addr = format!("{}:0", host);
     let (tx, rx) = cbc::bounded(2);
     let data = AppState {
         tx: Arc::new(tx.clone()),
@@ -39,10 +41,8 @@ pub async fn check_request_received(browser: Browser, uri: String) {
 
     let server = http_server.run();
 
-    // open the url
-    if open_browser(browser, &format!("http://127.0.0.1:{}{}", port, &uri)).is_err() {
-        panic!("failed to open browser");
-    }
+    // invoke the op
+    op(&format!("http://{}:{}{}", host, port, &uri));
 
     // wait for the url to be hit
     match rx.recv_timeout(std::time::Duration::from_secs(30)) {
@@ -54,6 +54,14 @@ pub async fn check_request_received(browser: Browser, uri: String) {
     server.stop(true).await;
 }
 
+#[allow(dead_code)]
+pub async fn check_request_received(browser: Browser, uri: String) {
+    check_request_received_using(uri, "127.0.0.1", |url| {
+        open_browser(browser, url).expect("failed to open browser");
+    }).await;
+}
+
+#[allow(dead_code)]
 pub async fn check_browser(browser: Browser, platform: &str) {
     check_request_received(browser, format!("/{}", platform)).await;
     check_request_received(browser, format!("/{}/ｎｏｎａｓｃｉｉ", platform)).await;

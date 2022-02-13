@@ -5,17 +5,17 @@ mod common;
 mod tests {
     const TEST_PLATFORM: &str = "macos";
 
-    use super::common::check_browser;
+    use super::common::{check_browser, check_request_received};
     use webbrowser::Browser;
 
     #[actix_rt::test]
     async fn test_open_default() {
-        check_browser(Browser::Default, TEST_PLATFORM).await;
+        check_request_received(Browser::Default, format!("/{}", TEST_PLATFORM)).await;
     }
 
     #[actix_rt::test]
     async fn test_open_safari() {
-        check_browser(Browser::Safari, TEST_PLATFORM).await;
+        check_request_received(Browser::Safari, format!("/{}", TEST_PLATFORM)).await;
     }
 
     #[actix_rt::test]

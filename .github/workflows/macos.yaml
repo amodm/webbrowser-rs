@@ -34,6 +34,9 @@ jobs:
           command: build
       - uses: actions-rs/cargo@v1
         name: Run Tests
+        env:
+          LC_ALL: en_US.UTF-8
+          LC_CTYPE: UTF-8
         with:
           command: test
           args: --all --locked --verbose

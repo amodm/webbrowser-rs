@@ -31,7 +31,7 @@ if webbrowser::open("http://github.com").is_ok() {
 
 Currently state of platform support is:
 
-* macos => default, as well as browsers listed under [Browser](enum.Browser.html)
+* macos => default, as well as browsers listed under [Browser](enum.Browser.html). UTF-8 tests currently fail on Github Runner, but run fine on local, so YMMV.
 * windows => default browser only
 * linux/*bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open, gnome-open, whichever works first)
 * android => default browser only
@@ -43,6 +43,10 @@ Important note:
 
 * This library requires availability of browsers and a graphical environment during runtime
 * `cargo test` will actually open the browser locally
+
+## PRs invited for
+* Fixing macos tests for UTF-8 URLs
+* Support for other platforms, e.g. iOS
 
 ## License
 

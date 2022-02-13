@@ -2,7 +2,7 @@ name: Android
 
 on:
   push:
-    branches: [ '*' ]
+    branches-ignore: [ '**win**', '**linux**', '**macos**', '**bsd**', '**haiku**', '**wasm**', '**ios**' ]
   pull_request:
     branches: [ master ]
 

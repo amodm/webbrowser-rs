@@ -2,7 +2,7 @@ name: MacOS
 
 on:
   push:
-    branches: [ '*' ]
+    branches-ignore: [ '**win**', '**android**', '**linux**', '**bsd**', '**haiku**', '**wasm**', '**ios**' ]
   pull_request:
     branches: [ master ]
 
@@ -34,8 +34,6 @@ jobs:
           command: build
       - uses: actions-rs/cargo@v1
         name: Run Tests
-        env:
-          RUST_BACKTRACE: full
         with:
           command: test
           args: --all --locked --verbose

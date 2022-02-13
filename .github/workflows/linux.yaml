@@ -2,7 +2,7 @@ name: Linux
 
 on:
   push:
-    branches: [ '*' ]
+    branches-ignore: [ '**win**', '**android**', '**macos**', '**bsd**', '**haiku**', '**wasm**', '**ios**' ]
   pull_request:
     branches: [ master ]
 

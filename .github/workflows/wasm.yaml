@@ -2,7 +2,7 @@ name: WASM
 
 on:
   push:
-    branches: [ '*' ]
+    branches-ignore: [ '**win**', '**android**', '**linux**', '**bsd**', '**haiku**', '**macos**', '**ios**' ]
   pull_request:
     branches: [ master ]
 

@@ -13,10 +13,13 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: ubuntu-latest
+    runs-on: macos-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly]
+        rust: [stable ]
+        api-level: [ 29 ]
+        ndk-version: [ '22.1.7171670' ]
+        cmake-version: [ '3.18.1' ]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2
@@ -28,13 +31,48 @@ jobs:
           toolchain: ${{ matrix.rust }}
           override: true
           components: rustfmt, clippy
-          target: armv7-linux-androideabi
+      - uses: actions-rs/cargo@v1
+        name: Install cargo-apk
+        with:
+          command: install
+          args: cargo-apk
       - uses: actions-rs/cargo@v1
         name: Compile
         with:
-          use-cross: true
           command: build
-          args: --target armv7-linux-androideabi
+
+      # Check if AVD is in cache, else create AVD
+      - name: AVD cache
+        uses: actions/cache@v2
+        id: avd-cache
+        with:
+          path: |
+            ~/.android/avd/*
+            ~/.android/adb*
+          key: avd-${{ matrix.api-level }}
+      - name: Create AVD
+        if: steps.avd-cache.outputs.cache-hit != 'true'
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          force-avd-creation: false
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: false
+          script: echo "Generated AVD snapshot for caching."
+
+      # Run tests on emulator
+      - name: run tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api-level }}
+          ndk: ${{ matrix.ndk-version }}
+          cmake: ${{ matrix.cmake-version }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          script: bash -c 'ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} cargo test --test test_android -- --ignored'
+
+      # Code format, linting etc.
       - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:

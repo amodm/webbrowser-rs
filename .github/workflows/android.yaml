@@ -32,11 +32,11 @@ jobs:
           target: i686-linux-android
           override: true
           components: rustfmt, clippy
-      - uses: actions-rs/cargo@v1
+      - uses: actions-rs/install@v0.1
         name: Install cargo-apk
         with:
-          command: install
-          args: cargo-apk
+          crate: cargo-apk
+          version: latest
           use-tool-cache: true
       - uses: actions-rs/cargo@v1
         name: Compile

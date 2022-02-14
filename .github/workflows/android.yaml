@@ -35,7 +35,7 @@ jobs:
           components: rustfmt, clippy
 
       # Install cargo-apk
-      - uses: actions-rs/cache@v2
+      - uses: actions/cache@v2
         name: Fetch cargo-apk from cache
         id: cargo-apk-cache
         with:

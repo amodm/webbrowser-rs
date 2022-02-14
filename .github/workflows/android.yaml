@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  CARGO_APK_VERSION: '0.8.2'
 
 jobs:
   build:
@@ -32,12 +33,23 @@ jobs:
           target: i686-linux-android
           override: true
           components: rustfmt, clippy
-      - uses: actions-rs/install@v0.1
-        name: Install cargo-apk
+
+      # Install cargo-apk
+      - uses: actions-rs/cache@v2
+        name: Fetch cargo-apk from cache
+        id: cargo-apk-cache
+        with:
+          path: ~/.cargo/bin/cargo-apk
+          key: cargo-apk-${{ env.CARGO_APK_VERSION }}
+      - name: Install cargo-apk
+        if: steps.cargo-apk-cache.outputs.cache-hit != 'true'
+        uses: actions-rs/install@v0.1
         with:
           crate: cargo-apk
-          version: '0.8.2'
-          use-tool-cache: true
+          version: ${{ env.CARGO_APK_VERSION }}
+          use-tool-cache: false
+
+      # Compile
       - uses: actions-rs/cargo@v1
         name: Compile
         with:

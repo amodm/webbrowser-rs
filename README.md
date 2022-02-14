@@ -29,7 +29,7 @@ if webbrowser::open("http://github.com").is_ok() {
 }
 ```
 
-Currently state of platform support is:
+## Platform Support
 
 | Platform | Supported | Browsers | Test status |
 |----------|-----------|----------|-------------|
@@ -41,14 +41,19 @@ Currently state of platform support is:
 | haiku    | ✅ (experimental) | default only | ❌ |
 | ios      | ❌         | default only | ❌ |
 
-Important note:
+## Looking to contribute?
+
+PRs invited for
+
+* Fixing macos tests for UTF-8 URLs
+* Support for other platforms, e.g. iOS
+
+Important note (while testing):
 
 * This library requires availability of browsers and a graphical environment during runtime
 * `cargo test` will actually open the browser locally
 
-## PRs invited for
-* Fixing macos tests for UTF-8 URLs
-* Support for other platforms, e.g. iOS
+When contributing, please note that your work will be dual licensed as MIT + Apache-2.0 (see below).
 
 ## License
 

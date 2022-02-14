@@ -36,7 +36,7 @@ jobs:
         name: Install cargo-apk
         with:
           crate: cargo-apk
-          version: latest
+          version: '0.8.2'
           use-tool-cache: true
       - uses: actions-rs/cargo@v1
         name: Compile

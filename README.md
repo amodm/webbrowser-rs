@@ -31,13 +31,15 @@ if webbrowser::open("http://github.com").is_ok() {
 
 Currently state of platform support is:
 
-* macos => default, as well as browsers listed under [Browser](enum.Browser.html). UTF-8 tests currently fail on Github Runner, but run fine on local, so YMMV.
-* windows => default browser only
-* linux/*bsd => default browser only (uses $BROWSER env var, failing back to xdg-open, gvfs-open, gnome-open, whichever works first)
-* android => default browser only
-* haiku => untested and experimental
-* wasm -> untested and experimental
-* ios => not supported right now
+| Platform | Supported | Browsers | Test status |
+|----------|-----------|----------|-------------|
+| macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅. Non-ascii UTF-8 URLs currently fail on Github, but works locally, so YMMV |
+| windows  | ✅        | default only | ✅ |
+| linux/*bsd  | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
+| android  | ✅        | default only | ✅ |
+| wasm     | ✅ (experimental) | default only | ❌ |
+| haiku    | ✅ (experimental) | default only | ❌ |
+| ios      | ❌         | default only | ❌ |
 
 Important note:
 

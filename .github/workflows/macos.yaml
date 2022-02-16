@@ -16,7 +16,7 @@ jobs:
     runs-on: macos-latest
     strategy:
       matrix:
-        rust: [stable, beta, nightly]
+        rust: [stable]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
       - uses: actions/checkout@v2

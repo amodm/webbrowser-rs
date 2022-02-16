@@ -3,7 +3,6 @@ extern crate winapi;
 
 use crate::{Browser, Error, ErrorKind, Result};
 pub use std::os::windows::process::ExitStatusExt;
-use std::process::ExitStatus;
 use std::ptr;
 use widestring::U16CString;
 
@@ -11,7 +10,7 @@ use widestring::U16CString;
 /// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
 /// fucntion.
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+pub fn open_browser_internal(browser: Browser, url: &str) -> Result<()> {
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
@@ -41,7 +40,7 @@ pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> 
                 code
             };
             if code > 32 {
-                Ok(ExitStatus::from_raw(0))
+                Ok(())
             } else {
                 Err(Error::last_os_error())
             }

@@ -1,6 +1,9 @@
 use crate::{Browser, Error, ErrorKind, Result};
-pub use std::os::unix::process::ExitStatusExt;
+use std::os::unix::process::ExitStatusExt;
 use std::process::{Command, ExitStatus};
+
+mod common;
+use common::from_status;
 
 /// Deal with opening of browsers on Linux and *BSD - currently supports only the default browser
 ///
@@ -9,7 +12,11 @@ use std::process::{Command, ExitStatus};
 /// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, open, respectively, whichever works
 ///    first
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+pub fn open_browser_internal(browser: Browser, url: &str) -> Result<()> {
+    from_status(open_browser_unix(browser, url))
+}
+
+fn open_browser_unix(browser: Browser, url: &str) -> Result<ExitStatus> {
     match browser {
         Browser::Default => open_on_unix_using_browser_env(url)
             .or_else(|_| -> Result<ExitStatus> { Command::new("xdg-open").arg(url).status() })

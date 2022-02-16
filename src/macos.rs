@@ -1,13 +1,15 @@
 use crate::{Browser, Error, ErrorKind, Result};
-pub use std::os::unix::process::ExitStatusExt;
-use std::process::{Command, ExitStatus};
+use std::process::Command;
+
+mod common;
+use common::from_status;
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> {
+pub fn open_browser_internal(browser: Browser, url: &str) -> Result<()> {
     let mut cmd = Command::new("open");
     match browser {
-        Browser::Default => cmd.arg(url).status(),
+        Browser::Default => from_status(cmd.arg(url).status()),
         _ => {
             let app: Option<&str> = match browser {
                 Browser::Firefox => Some("Firefox"),
@@ -18,7 +20,7 @@ pub fn open_browser_internal(browser: Browser, url: &str) -> Result<ExitStatus> 
                 _ => None,
             };
             match app {
-                Some(name) => cmd.arg("-a").arg(name).arg(url).status(),
+                Some(name) => from_status(cmd.arg("-a").arg(name).arg(url).status()),
                 None => Err(Error::new(
                     ErrorKind::NotFound,
                     format!("Unsupported browser {:?}", browser),

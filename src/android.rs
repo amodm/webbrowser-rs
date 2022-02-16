@@ -5,7 +5,7 @@ use std::process::ExitStatus;
 
 /// Deal with opening of browsers on Android
 #[inline]
-pub fn open_browser_internal(_: Browser, url: &str) -> Result<ExitStatus> {
+pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
     // Create a VM for executing Java calls
     let native_activity = ndk_glue::native_activity();
     let vm_ptr = native_activity.vm();
@@ -61,5 +61,5 @@ pub fn open_browser_internal(_: Browser, url: &str) -> Result<ExitStatus> {
     )
     .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to start activity") })?;
 
-    Ok(ExitStatus::from_raw(0))
+    Ok(())
 }

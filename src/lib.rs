@@ -26,46 +26,39 @@
 //! }
 //! ```
 
-#[cfg(windows)]
-mod windows;
-#[cfg(windows)]
-use windows::*;
+#[cfg_attr(target_os = "macos", path = "macos.rs")]
+#[cfg_attr(target_os = "android", path = "android.rs")]
+#[cfg_attr(target_arch = "wasm32", path = "wasm.rs")]
+#[cfg_attr(windows, path = "windows.rs")]
+#[cfg_attr(
+    any(
+        target_os = "linux",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "haiku"
+    ),
+    path = "unix.rs"
+)]
+mod os;
 
-#[cfg(target_os = "android")]
-mod android;
-#[cfg(target_os = "android")]
-use android::*;
-
-#[cfg(target_os = "macos")]
-mod macos;
-#[cfg(target_os = "macos")]
-use macos::*;
-
-#[cfg(any(
+#[cfg(not(any(
+    target_os = "android",
+    target_os = "windows",
+    target_os = "macos",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",
     target_os = "openbsd",
-    target_os = "haiku"
-))]
-mod unix;
-#[cfg(any(
-    target_os = "linux",
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "haiku"
-))]
-use unix::*;
+    target_os = "haiku",
+    target_arch = "wasm32"
+)))]
+compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};
-use std::process::{ExitStatus, Output};
 use std::str::FromStr;
 use std::{error, fmt};
-
-#[cfg(target_arch = "wasm32")]
-use web_sys::Window;
 
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
@@ -165,24 +158,8 @@ impl FromStr for Browser {
 ///     // ...
 /// }
 /// ```
-#[cfg(not(target_arch = "wasm32"))]
-pub fn open(url: &str) -> Result<Output> {
-    open_browser(Browser::Default, url)
-}
-
-#[cfg(target_arch = "wasm32")]
 pub fn open(url: &str) -> Result<()> {
-    let window = web_sys::window();
-    match window {
-        Some(w) => {
-            w.open_with_url(url);
-            Ok(())
-        }
-        None => Err(std::io::Error::new(
-            ErrorKind::Other,
-            "should have a window in this context",
-        )),
-    }
+    open_browser(Browser::Default, url)
 }
 
 /// Opens the specified URL on the specific browser (if available) requested. Return semantics are
@@ -196,40 +173,9 @@ pub fn open(url: &str) -> Result<()> {
 ///     // ...
 /// }
 /// ```
-#[cfg(not(target_arch = "wasm32"))]
-pub fn open_browser(browser: Browser, url: &str) -> Result<Output> {
-    open_browser_internal(browser, url).and_then(|status| {
-        if let Some(code) = status.code() {
-            if code == 0 {
-                Ok(Output {
-                    status: ExitStatus::from_raw(0),
-                    stdout: vec![],
-                    stderr: vec![],
-                })
-            } else {
-                Err(Error::new(
-                    ErrorKind::Other,
-                    format!("return code {}", code),
-                ))
-            }
-        } else {
-            Err(Error::new(ErrorKind::Other, "interrupted by signal"))
-        }
-    })
+pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
+    os::open_browser_internal(browser, url)
 }
-
-#[cfg(not(any(
-    target_os = "android",
-    target_os = "windows",
-    target_os = "macos",
-    target_os = "linux",
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "haiku",
-    target_arch = "wasm32"
-)))]
-compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
 
 #[test]
 #[ignore]
@@ -241,12 +187,6 @@ fn test_open_firefox() {
 #[ignore]
 fn test_open_chrome() {
     assert!(open_browser(Browser::Chrome, "http://github.com").is_ok());
-}
-
-#[test]
-#[cfg(target_arch = "wasm32")]
-fn test_open_default_wasm() {
-    assert!(open("http://github.com").is_ok());
 }
 
 #[test]

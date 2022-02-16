@@ -47,8 +47,7 @@ jobs:
           use-tool-cache: false
 
       # Compile using WEBBROWSER_WASM_TARGET=_self so that we don't encounter popup blockers
-      - uses: actions-rs/cargo@v1
-        name: Compile
+      - name: Compile
         env:
           WEBBROWSER_WASM_TARGET: _self
         run: wasm-pack build --target web --dev

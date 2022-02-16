@@ -60,8 +60,7 @@ jobs:
           firefox-version: '97.0'
       - name: Custom headless firefox script
         run: |
-          echo "#!/bin/bash" > /tmp/hffox
-          echo "nohup firefox --headless "$*" >/dev/null 2>&1 &" >> /tmp/hffox
+          echo 'nohup firefox --headless "$*" >/dev/null 2>&1 &' > /tmp/hffox
           chmod 755 /tmp/hffox
 
       # Run tests

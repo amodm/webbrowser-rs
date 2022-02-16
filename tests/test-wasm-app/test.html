@@ -1,0 +1,24 @@
+<html>
+<head>
+  <link rel="icon" type="image/x-icon" href="/static/wasm/favicon.ico">
+  <script type="module">
+      import init, {test_open_browser} from './test_wasm_app.js';
+      async function run() {
+        await init(await fetch('./test_wasm_app_bg.wasm'));
+        console.log('initialized');
+        test_open_browser("DYNAMIC_URL_TBD");
+        console.log('opened');
+      }
+      function clickme() {
+        let elem = document.getElementById('clickme');
+        elem.onclick.apply(elem);
+      }
+      window.open_browser = run;
+      setTimeout(() => window.close(), 3000);
+      run();
+  </script>
+</head>
+<body>
+    <a onclick="window.open_browser()" href="#" id="clickme">Click me</a>
+</body>
+</html>

@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  WASM_PACK_VERSION: '0.10.2'
 
 jobs:
   build:
@@ -29,12 +30,48 @@ jobs:
           override: true
           components: rustfmt, clippy
           target: wasm32-unknown-unknown
+
+      # Install wasm-pack
+      - uses: actions/cache@v2
+        name: Fetch wasm-pack from cache
+        id: wasm-pack-cache
+        with:
+          path: ~/.cargo/bin/wasm-pack
+          key: wasm-pack-${{ env.WASM_PACK_VERSION }}
+      - name: Install wasm-pack
+        if: steps.wasm-pack-cache.outputs.cache-hit != 'true'
+        uses: actions-rs/install@v0.1
+        with:
+          crate: wasm-pack
+          version: ${{ env.WASM_PACK_VERSION }}
+          use-tool-cache: false
+
+      # Compile using WEBBROWSER_WASM_TARGET=_self so that we don't encounter popup blockers
       - uses: actions-rs/cargo@v1
         name: Compile
+        env:
+          WEBBROWSER_WASM_TARGET: _self
+        run: wasm-pack build --target web --dev
+        working-directory: tests/test-wasm-app
+
+      # Install firefox
+      - name: Install firefox
+        uses: browser-actions/setup-firefox@latest
         with:
-          use-cross: true
-          command: build
-          args: --target wasm32-unknown-unknown
+          firefox-version: 97.0
+      - name: Custom headless firefox script
+        run: |
+          echo "#!/bin/bash" > /tmp/hffox
+          echo "nohup firefox --headless "$*" >/dev/null 2>&1 &" >> /tmp/hffox
+          chmod 755 /tmp/hffox
+
+      # Run tests
+      - name: Run tests
+        env:
+          BROWSER: /tmp/hffox %s
+        run: cargo test --test test_wasm -- --ignored
+
+      # Code format, linting etc.
       - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:

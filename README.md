@@ -16,7 +16,7 @@ Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) 
 
 ## Documentation
 
-- [API Reference](http://code.rootnet.in/webbrowser-rs/webbrowser/)
+- [API Reference](https://docs.rs/webbrowser)
 - [Release Notes](CHANGELOG.md)
 
 ## Examples

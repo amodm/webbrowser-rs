@@ -40,10 +40,15 @@ pub fn open_browser_internal(
 }
 
 fn run_command(cmd: &mut Command, options: &BrowserOptions) -> Result<()> {
-    if options.suppress_output {
+    if options.suppress_output && !option_env!("WEBBROWSER_FORCE_NO_SUPPRESS").is_some() {
         cmd.stdout(Stdio::null())
             .stdin(Stdio::null())
             .stderr(Stdio::null());
     }
+
+    if option_env!("WEBBROWSER_DEBUG_TESTS").is_some() {
+        println!("[debug-macos-tests] about to run command: {:?}", cmd);
+    }
+
     from_status(cmd.status())
 }

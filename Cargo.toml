@@ -15,7 +15,7 @@ edition = "2018"
 url = "2"
 
 [target.'cfg(target_arch = "wasm32")'.dependencies.web-sys]
-version = "0.3.36"
+version = "0.3"
 features = [
   'Window'
 ]
@@ -24,8 +24,8 @@ features = [
 wasm-console = ["web-sys/console"]
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3.6", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
-widestring = "0.4.0"
+winapi = { version = "0.3", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
+widestring = "0.5"
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.19"

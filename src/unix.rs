@@ -26,6 +26,8 @@ macro_rules! try_browser {
 pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
     // we first try with the $BROWSER env
     try_with_browser_env(url)
+        // allow for haiku's open specifically
+        .or_else(|_| try_haiku(url))
         // then we try with xdg-open
         .or_else(|_| try_browser!("xdg-open", url))
         // else do desktop specific stuff
@@ -128,6 +130,17 @@ fn guess_desktop_env() -> &'static str {
     } else {
         // All others
         unknown
+    }
+}
+
+// Handle Haiku explicitly, as it uses an "open" command, similar to macos
+// but on other Unixes, open ends up translating to shell open fd
+#[inline]
+fn try_haiku(url: &str) -> Result<()> {
+    if cfg!(target_os = "haiku") {
+        try_browser!("open", url).map(|_| ())
+    } else {
+        Err(Error::new(ErrorKind::NotFound, "Not on haiku"))
     }
 }
 

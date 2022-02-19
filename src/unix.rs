@@ -1,16 +1,16 @@
-use crate::{Browser, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 use std::os::unix::fs::PermissionsExt;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 macro_rules! try_browser {
-    ( $name:expr, $( $arg:expr ),+ ) => {
+    ( $options: expr, $name:expr, $( $arg:expr ),+ ) => {
         for_matching_path($name, |pb| {
             let mut cmd = Command::new(pb);
             $(
                 cmd.arg($arg);
             )+
-            run_command(&mut cmd, !is_text_browser(&pb))
+            run_command(&mut cmd, !is_text_browser(&pb), $options)
         })
     }
 }
@@ -23,35 +23,35 @@ macro_rules! try_browser {
 /// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
 /// 4. Fallback to x-www-browser
 #[inline]
-pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
+pub fn open_browser_internal(_: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
     // we first try with the $BROWSER env
-    try_with_browser_env(url)
+    try_with_browser_env(url, options)
         // allow for haiku's open specifically
-        .or_else(|_| try_haiku(url))
+        .or_else(|_| try_haiku(options, url))
         // then we try with xdg-open
-        .or_else(|_| try_browser!("xdg-open", url))
+        .or_else(|_| try_browser!(options, "xdg-open", url))
         // else do desktop specific stuff
         .or_else(|r| match guess_desktop_env() {
-            "kde" => try_browser!("kde-open", url)
-                .or_else(|_| try_browser!("kde-open5", url))
-                .or_else(|_| try_browser!("kfmclient", "newTab", url)),
+            "kde" => try_browser!(options, "kde-open", url)
+                .or_else(|_| try_browser!(options, "kde-open5", url))
+                .or_else(|_| try_browser!(options, "kfmclient", "newTab", url)),
 
-            "gnome" => try_browser!("gio", "open", url)
-                .or_else(|_| try_browser!("gvfs-open", url))
-                .or_else(|_| try_browser!("gnome-open", url)),
+            "gnome" => try_browser!(options, "gio", "open", url)
+                .or_else(|_| try_browser!(options, "gvfs-open", url))
+                .or_else(|_| try_browser!(options, "gnome-open", url)),
 
-            "mate" => try_browser!("gio", "open", url)
-                .or_else(|_| try_browser!("gvfs-open", url))
-                .or_else(|_| try_browser!("mate-open", url)),
+            "mate" => try_browser!(options, "gio", "open", url)
+                .or_else(|_| try_browser!(options, "gvfs-open", url))
+                .or_else(|_| try_browser!(options, "mate-open", url)),
 
-            "xfce" => try_browser!("exo-open", url)
-                .or_else(|_| try_browser!("gio", "open", url))
-                .or_else(|_| try_browser!("gvfs-open", url)),
+            "xfce" => try_browser!(options, "exo-open", url)
+                .or_else(|_| try_browser!(options, "gio", "open", url))
+                .or_else(|_| try_browser!(options, "gvfs-open", url)),
 
             _ => Err(r),
         })
         // at the end, we'll try x-www-browser and return the result as is
-        .or_else(|_| try_browser!("x-www-browser", url))
+        .or_else(|_| try_browser!(options, "x-www-browser", url))
         // if all above failed, map error to not found
         .map_err(|_| {
             Error::new(
@@ -64,7 +64,7 @@ pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
 }
 
 #[inline]
-fn try_with_browser_env(url: &str) -> Result<()> {
+fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
     // $BROWSER can contain ':' delimited options, each representing a potential browser command line
     for browser in std::env::var("BROWSER")
         .unwrap_or_else(|_| String::from(""))
@@ -88,7 +88,7 @@ fn try_with_browser_env(url: &str) -> Result<()> {
                     // append the url as an argument only if it was not already set via %s
                     cmd.arg(url);
                 }
-                run_command(&mut cmd, !is_text_browser(pb))
+                run_command(&mut cmd, !is_text_browser(pb), options)
             });
             if env_exit.is_ok() {
                 return Ok(());
@@ -136,9 +136,9 @@ fn guess_desktop_env() -> &'static str {
 // Handle Haiku explicitly, as it uses an "open" command, similar to macos
 // but on other Unixes, open ends up translating to shell open fd
 #[inline]
-fn try_haiku(url: &str) -> Result<()> {
+fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
     if cfg!(target_os = "haiku") {
-        try_browser!("open", url).map(|_| ())
+        try_browser!(options, "open", url).map(|_| ())
     } else {
         Err(Error::new(ErrorKind::NotFound, "Not on haiku"))
     }
@@ -193,18 +193,24 @@ where
 
 /// Run the specified command in foreground/background
 #[inline]
-fn run_command(cmd: &mut Command, background: bool) -> Result<()> {
+fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) -> Result<()> {
     if background {
         // if we're in background, set stdin/stdout to null and spawn a child, as we're
         // not supposed to have any interaction.
-        cmd.stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .spawn()
-            .map(|_| ())
+        if options.suppress_output {
+            cmd.stdin(Stdio::null())
+                .stdout(Stdio::null())
+                .stderr(Stdio::null())
+        } else {
+            cmd
+        }
+        .spawn()
+        .map(|_| ())
     } else {
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
-        // till completion
+        // till completion.
+        // We also specifically don't supress anything here, because we're running here
+        // most likely because of a text browser
         cmd.status().and_then(|status| {
             if status.success() {
                 Ok(())

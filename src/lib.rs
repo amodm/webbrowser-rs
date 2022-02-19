@@ -2,7 +2,17 @@
 //!
 //! Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library.
 //!
-//! ### Platform Support Status
+//! ## Examples
+//!
+//! ```no_run
+//! use webbrowser;
+//!
+//! if webbrowser::open("http://github.com").is_ok() {
+//!     // ...
+//! }
+//! ```
+//!
+//! ## Platform Support Status
 //!
 //! | Platform | Supported | Browsers | Test status |
 //! |----------|-----------|----------|-------------|
@@ -14,20 +24,10 @@
 //! | haiku    | ✅ (experimental) | default only | ❌ |
 //! | ios      | ❌        | unsupported | ❌ |
 //!
-//! Important note:
-//!
-//! * This library requires availability of browsers and a graphical environment during runtime
-//! * `cargo test` will actually open the browser locally.
-//!
-//! # Examples
-//!
-//! ```no_run
-//! use webbrowser;
-//!
-//! if webbrowser::open("http://github.com").is_ok() {
-//!     // ...
-//! }
-//! ```
+//! ## Consistent Behaviour
+//! `webbrowser` defines consistent behaviour on all platforms as follows:
+//! * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
+//! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be overridden by `webbrowser::open_browser_with_options`.
 
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "android", path = "android.rs")]
@@ -141,6 +141,31 @@ impl FromStr for Browser {
     }
 }
 
+#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+/// BrowserOptions to override certain default behaviour
+///
+/// e.g. by default, we suppress stdout/stderr, but that behaviour can be overridden here
+pub struct BrowserOptions {
+    pub suppress_output: bool,
+}
+
+impl fmt::Display for BrowserOptions {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        f.write_fmt(format_args!(
+            "BrowserOptions(supress_output={})",
+            self.suppress_output
+        ))
+    }
+}
+
+impl std::default::Default for BrowserOptions {
+    fn default() -> Self {
+        BrowserOptions {
+            suppress_output: true,
+        }
+    }
+}
+
 /// Opens the URL on the default browser of this platform
 ///
 /// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
@@ -177,11 +202,33 @@ pub fn open(url: &str) -> Result<()> {
 /// }
 /// ```
 pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
+    open_browser_with_options(browser, url, &BrowserOptions::default())
+}
+
+/// Opens the specified URL on the specific browser (if available) requested, while overriding the
+/// default options.
+///
+/// Return semantics are
+/// the same as for [open](fn.open.html).
+///
+/// # Examples
+/// ```no_run
+/// use webbrowser::{open_browser_with_options, Browser, BrowserOptions};
+///
+/// if open_browser_with_options(Browser::Default, "http://github.com", &BrowserOptions { suppress_output: false }).is_ok() {
+///     // ...
+/// }
+/// ```
+pub fn open_browser_with_options(
+    browser: Browser,
+    url: &str,
+    options: &BrowserOptions,
+) -> Result<()> {
     let url_s: String = match url::Url::parse(url) {
         Ok(u) => u.as_str().into(),
         Err(_) => url.into(),
     };
-    os::open_browser_internal(browser, &url_s)
+    os::open_browser_internal(browser, &url_s, options)
 }
 
 #[test]

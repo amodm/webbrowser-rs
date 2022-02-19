@@ -1,12 +1,16 @@
-use crate::{Browser, Error, ErrorKind, Result};
-use std::process::Command;
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use std::process::{Command, Stdio};
 
 mod common;
 use common::from_status;
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[inline]
-pub fn open_browser_internal(browser: Browser, url_raw: &str) -> Result<()> {
+pub fn open_browser_internal(
+    browser: Browser,
+    url_raw: &str,
+    options: &BrowserOptions,
+) -> Result<()> {
     let url_s: String = match url::Url::parse(url_raw) {
         Ok(u) => u.as_str().into(),
         Err(_) => url_raw.into(),
@@ -14,7 +18,7 @@ pub fn open_browser_internal(browser: Browser, url_raw: &str) -> Result<()> {
     let url = &url_s;
     let mut cmd = Command::new("open");
     match browser {
-        Browser::Default => from_status(cmd.arg(url).status()),
+        Browser::Default => run_command(cmd.arg(url), options),
         _ => {
             let app: Option<&str> = match browser {
                 Browser::Firefox => Some("Firefox"),
@@ -25,7 +29,7 @@ pub fn open_browser_internal(browser: Browser, url_raw: &str) -> Result<()> {
                 _ => None,
             };
             match app {
-                Some(name) => from_status(cmd.arg("-a").arg(name).arg(url).status()),
+                Some(name) => run_command(cmd.arg("-a").arg(name).arg(url), options),
                 None => Err(Error::new(
                     ErrorKind::NotFound,
                     format!("Unsupported browser {:?}", browser),
@@ -33,4 +37,13 @@ pub fn open_browser_internal(browser: Browser, url_raw: &str) -> Result<()> {
             }
         }
     }
+}
+
+fn run_command(cmd: &mut Command, options: &BrowserOptions) -> Result<()> {
+    if options.suppress_output {
+        cmd.stdout(Stdio::null())
+            .stdin(Stdio::null())
+            .stderr(Stdio::null());
+    }
+    from_status(cmd.status())
 }

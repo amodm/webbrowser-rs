@@ -1,16 +1,18 @@
 extern crate widestring;
 extern crate winapi;
 
-use crate::{Browser, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 pub use std::os::windows::process::ExitStatusExt;
 use std::ptr;
 use widestring::U16CString;
 
 /// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
 /// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
-/// fucntion.
+/// function.
+///
+/// We ignore BrowserOptions on Windows.
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<()> {
+pub fn open_browser_internal(browser: Browser, url: &str, _: &BrowserOptions) -> Result<()> {
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};

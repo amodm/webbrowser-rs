@@ -41,6 +41,11 @@ if webbrowser::open("http://github.com").is_ok() {
 | haiku    | ✅ (experimental) | default only | ❌ |
 | ios      | ❌        | default only | ❌ |
 
+## Consistent Behaviour
+`webbrowser` defines consistent behaviour on all platforms as follows:
+* **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
+* **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be overridden by `webbrowser::open_browser_with_options`.
+
 ## Looking to contribute?
 
 PRs invited for

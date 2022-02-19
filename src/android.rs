@@ -1,11 +1,11 @@
-use crate::{Browser, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 use jni::objects::JValue;
 pub use std::os::unix::process::ExitStatusExt;
 use std::process::ExitStatus;
 
-/// Deal with opening of browsers on Android
+/// Deal with opening of browsers on Android. BrowserOptions are ignored here.
 #[inline]
-pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
+pub fn open_browser_internal(_: Browser, url: &str, _: &BrowserOptions) -> Result<()> {
     // Create a VM for executing Java calls
     let native_activity = ndk_glue::native_activity();
     let vm_ptr = native_activity.vm();

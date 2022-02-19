@@ -1,6 +1,6 @@
 use crate::{Browser, Error, ErrorKind, Result};
 use std::os::unix::fs::PermissionsExt;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 
 macro_rules! try_browser {
@@ -19,8 +19,9 @@ macro_rules! try_browser {
 ///
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
-/// 2. Attempt to open the url via xdg-open, gvfs-open, gnome-open, open, respectively, whichever works
-///    first
+/// 2. Attempt to use xdg-open
+/// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
+/// 4. Fallback to x-www-browser
 #[inline]
 pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
     // we first try with the $BROWSER env
@@ -28,35 +29,36 @@ pub fn open_browser_internal(_: Browser, url: &str) -> Result<()> {
         // then we try with xdg-open
         .or_else(|_| try_browser!("xdg-open", url))
         // else do desktop specific stuff
-        .or_else(|r| {
-            // detect desktop
-            let desktop_env: String = std::env::var("XDG_CURRENT_DESKTOP")
-                .unwrap_or_else(|_| String::from("unknown"))
-                .to_ascii_uppercase();
-            match desktop_env.as_str() {
-                "KDE" => try_browser!("kde-open", url).or_else(|_| try_browser!("kde-open5", url)),
-                "GNOME" | "CINNAMON" => try_browser!("gio", "open", url)
-                    .or_else(|_| try_browser!("gvfs-open", url))
-                    .or_else(|_| try_browser!("gnome-open", url)),
-                "MATE" => try_browser!("gio", "open", url)
-                    .or_else(|_| try_browser!("gvfs-open", url))
-                    .or_else(|_| try_browser!("mate-open", url)),
-                "XFCE" => try_browser!("exo-open", url)
-                    .or_else(|_| try_browser!("gio", "open", url))
-                    .or_else(|_| try_browser!("gvfs-open", url)),
-                _ => Err(r),
-            }
+        .or_else(|r| match guess_desktop_env() {
+            "kde" => try_browser!("kde-open", url)
+                .or_else(|_| try_browser!("kde-open5", url))
+                .or_else(|_| try_browser!("kfmclient", "newTab", url)),
+
+            "gnome" => try_browser!("gio", "open", url)
+                .or_else(|_| try_browser!("gvfs-open", url))
+                .or_else(|_| try_browser!("gnome-open", url)),
+
+            "mate" => try_browser!("gio", "open", url)
+                .or_else(|_| try_browser!("gvfs-open", url))
+                .or_else(|_| try_browser!("mate-open", url)),
+
+            "xfce" => try_browser!("exo-open", url)
+                .or_else(|_| try_browser!("gio", "open", url))
+                .or_else(|_| try_browser!("gvfs-open", url)),
+
+            _ => Err(r),
         })
         // at the end, we'll try x-www-browser and return the result as is
         .or_else(|_| try_browser!("x-www-browser", url))
-        // and convert the result into a () on success
-        .and_then(|_| Ok(()))
-        .or_else(|_| {
-            Err(Error::new(
+        // if all above failed, map error to not found
+        .map_err(|_| {
+            Error::new(
                 ErrorKind::NotFound,
                 "No valid browsers detected. You can specify one in BROWSERS environment variable",
-            ))
+            )
         })
+        // and convert a successful result into a ()
+        .map(|_| ())
 }
 
 #[inline]
@@ -77,14 +79,14 @@ fn try_with_browser_env(url: &str) -> Result<()> {
             let browser_cmd = cmdarr[0];
             let env_exit = for_matching_path(browser_cmd, |pb| {
                 let mut cmd = Command::new(pb);
-                for i in 1..cmdarr.len() {
-                    cmd.arg(cmdarr[i]);
+                for arg in cmdarr.iter().skip(1) {
+                    cmd.arg(arg);
                 }
                 if !browser.contains("%s") {
                     // append the url as an argument only if it was not already set via %s
                     cmd.arg(url);
                 }
-                run_command(&mut cmd, !is_text_browser(&pb))
+                run_command(&mut cmd, !is_text_browser(pb))
             });
             if env_exit.is_ok() {
                 return Ok(());
@@ -97,9 +99,41 @@ fn try_with_browser_env(url: &str) -> Result<()> {
     ))
 }
 
+/// Detect the desktop environment
+#[inline]
+fn guess_desktop_env() -> &'static str {
+    let unknown = "unknown";
+    let xcd: String = std::env::var("XDG_CURRENT_DESKTOP")
+        .unwrap_or_else(|_| unknown.into())
+        .to_ascii_lowercase();
+    let dsession: String = std::env::var("DESKTOP_SESSION")
+        .unwrap_or_else(|_| unknown.into())
+        .to_ascii_lowercase();
+
+    if xcd.contains("gnome") || xcd.contains("cinnamon") || dsession.contains("gnome") {
+        // GNOME and its derivatives
+        "gnome"
+    } else if xcd.contains("kde")
+        || std::env::var("KDE_FULL_SESSION").is_ok()
+        || std::env::var("KDE_SESSION_VERSION").is_ok()
+    {
+        // KDE: https://userbase.kde.org/KDE_System_Administration/Environment_Variables#Automatically_Set_Variables
+        "kde"
+    } else if xcd.contains("mate") || dsession.contains("mate") {
+        // We'll treat MATE as distinct from GNOME due to mate-open
+        "mate"
+    } else if xcd.contains("xfce") || dsession.contains("xfce") {
+        // XFCE
+        "xfce"
+    } else {
+        // All others
+        unknown
+    }
+}
+
 /// Returns true if specified command refers to a known list of text browsers
 #[inline]
-fn is_text_browser(pb: &PathBuf) -> bool {
+fn is_text_browser(pb: &Path) -> bool {
     for browser in TEXT_BROWSERS.iter() {
         if pb.ends_with(&browser) {
             return true;
@@ -129,7 +163,7 @@ where
     } else {
         // search for this name inside PATH
         if let Ok(path) = std::env::var("PATH") {
-            for entry in path.split(":") {
+            for entry in path.split(':') {
                 let mut pb = std::path::PathBuf::from(entry);
                 pb.push(name);
                 if let Ok(metadata) = pb.metadata() {
@@ -154,7 +188,7 @@ fn run_command(cmd: &mut Command, background: bool) -> Result<()> {
             .stdout(Stdio::null())
             .stderr(Stdio::null())
             .spawn()
-            .and_then(|_| Ok(()))
+            .map(|_| ())
     } else {
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
         // till completion
@@ -171,6 +205,6 @@ fn run_command(cmd: &mut Command, background: bool) -> Result<()> {
     }
 }
 
-static TEXT_BROWSERS: [&'static str; 9] = [
+static TEXT_BROWSERS: [&str; 9] = [
     "lynx", "links", "links2", "elinks", "w3m", "eww", "netrik", "retawq", "curl",
 ];

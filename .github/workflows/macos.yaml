@@ -36,7 +36,7 @@ jobs:
         env:
           WEBBROWSER_DEBUG_TESTS: "true"
           WEBBROWSER_FORCE_NO_SUPPRESS: "true"
-        run: cargo test --locked --verbose --test test_macos -- --ignored
+        run: cargo test --locked --verbose --test test_macos -- --include-ignored
       - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:

@@ -40,7 +40,7 @@ pub fn open_browser_internal(
 }
 
 fn run_command(cmd: &mut Command, options: &BrowserOptions) -> Result<()> {
-    if options.suppress_output && !option_env!("WEBBROWSER_FORCE_NO_SUPPRESS").is_some() {
+    if options.suppress_output && option_env!("WEBBROWSER_FORCE_NO_SUPPRESS").is_none() {
         cmd.stdout(Stdio::null())
             .stdin(Stdio::null())
             .stderr(Stdio::null());

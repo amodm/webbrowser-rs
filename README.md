@@ -50,7 +50,6 @@ if webbrowser::open("http://github.com").is_ok() {
 
 PRs invited for
 
-* Fixing macos tests for UTF-8 URLs
 * Support for other platforms, e.g. iOS
 
 Important note (while testing):

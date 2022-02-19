@@ -33,7 +33,7 @@ if webbrowser::open("http://github.com").is_ok() {
 
 | Platform | Supported | Browsers | Test status |
 |----------|-----------|----------|-------------|
-| macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ (unencoded non-ascii URLs currently fail on Github, but work locally, so YMMV) |
+| macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
 | windows  | ✅        | default only | ✅ |
 | linux/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 | android  | ✅        | default only | ✅ |

@@ -6,7 +6,7 @@
 //!
 //! | Platform | Supported | Browsers | Test status |
 //! |----------|-----------|----------|-------------|
-//! | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ (unencoded non-ascii URLs currently fail on Github, but work locally, so YMMV) |
+//! | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
 //! | windows  | ✅        | default only | ✅ |
 //! | linux/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 //! | android  | ✅        | default only | ✅ |
@@ -177,7 +177,11 @@ pub fn open(url: &str) -> Result<()> {
 /// }
 /// ```
 pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
-    os::open_browser_internal(browser, url)
+    let url_s: String = match url::Url::parse(url) {
+        Ok(u) => u.as_str().into(),
+        Err(_) => url.into(),
+    };
+    os::open_browser_internal(browser, &url_s)
 }
 
 #[test]

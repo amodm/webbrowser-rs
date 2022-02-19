@@ -6,7 +6,12 @@ use common::from_status;
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str) -> Result<()> {
+pub fn open_browser_internal(browser: Browser, url_raw: &str) -> Result<()> {
+    let url_s: String = match url::Url::parse(url_raw) {
+        Ok(u) => u.as_str().into(),
+        Err(_) => url_raw.into(),
+    };
+    let url = &url_s;
     let mut cmd = Command::new("open");
     match browser {
         Browser::Default => from_status(cmd.arg(url).status()),

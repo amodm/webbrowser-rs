@@ -33,6 +33,13 @@ jobs:
         with:
           command: build
       - uses: actions-rs/cargo@v1
+        name: Run Tests
+        env:
+          BROWSER: curl
+        with:
+          command: test
+          args: --all --locked --verbose
+      - uses: actions-rs/cargo@v1
         name: Check Code Formatting
         with:
           command: fmt

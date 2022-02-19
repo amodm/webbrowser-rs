@@ -4,6 +4,19 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.6.0] - 2022-02-19 <a name="0.6.0"></a>
+### Changed
+- Define consistent non-blocking behaviour on all UNIX platforms. Now, unless it's specifically a text browser (like lynx etc.), we make sure that the browser is launched in a non-blocking way. See #18 and https://github.com/amodm/webbrowser-rs/commit/614cacf4a67ae0a75323768a1d70c16d792a760d
+- Define default behaviour on all UNIX platforms to make sure that stdout/stderr are suppressed. See #20 and https://github.com/amodm/webbrowser-rs/commit/ecfbf66daa0cc139bd557bd7899a183bd6575990
+- (Low probability) breaking change: All public functions now return a `Result<()>`. As almost all the uses of this library do a `.is_ok()` or equivalent, there should not be any breaks, but please report a bug if you do. See #42 and #43
+- @VZout modified Android implementation to use JNI instead of `am start` because of permission issues in more recent Android.
+- Define consistent behaviour for non-ascii URLs, where they're now encoded automatically before being invoked. See #34 and https://github.com/amodm/webbrowser-rs/commit/11789ddfe36264bbbe7d596ab61e3fff855c3adb
+- Richer set of underlying commands used for UNIX to cater to different scenarios at runtime. See https://github.com/amodm/webbrowser-rs/commit/d09eeae4f2ab5664fc01f4dba4a409e1bc11f10e
+
+### Fixed
+- On WASM, by default URLs are opened with a target of `_blank`. See #39. Thanks to @vbeffa for pointing out the issue.
+- @tokusumi fixed #41 where addition of `open` command (done for Haiku) was breaking things in some places.
+
 ## [0.5.5] - 2020-07-20 <a name="0.5.5"></a>
 ### Added
 - Support for WASM [PR #26](https://github.com/amodm/webbrowser-rs/pull/26)

@@ -29,6 +29,11 @@ mod tests {
             let new_html = old_html.replace("DYNAMIC_URL_TBD", url);
             fs::write(&dst_html, &new_html).expect("failed to update dst test.html");
 
+            // ensure favicon is present
+            let mut favicon = PathBuf::from(&app_dir);
+            favicon.push("pkg/favicon.ico");
+            fs::write(&favicon, "").expect("failed to create favicon.ico");
+
             // open browser
             let html_url = url.replace(uri, "/static/wasm/test.html");
             //println!("URL: {}", html_url);

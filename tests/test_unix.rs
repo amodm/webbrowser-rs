@@ -8,7 +8,7 @@ mod tests {
     use super::common::check_browser;
     use webbrowser::Browser;
 
-    #[actix_rt::test]
+    #[tokio::test]
     async fn test_open_default() {
         check_browser(Browser::Default, TEST_PLATFORM).await;
     }

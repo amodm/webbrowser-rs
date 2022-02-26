@@ -32,8 +32,8 @@ where
     let http_server = HttpServer::new(move || {
         App::new()
             .service(fs::Files::new("/static/wasm", "tests/test-wasm-app/pkg"))
-            .data(data.clone())
-            .route("/*", web::get().to(log_handler))
+            .app_data(web::Data::new(data.clone()))
+            .default_service(web::to(log_handler))
     })
     .bind(&bind_addr)
     .unwrap_or_else(|_| panic!("Can not bind to {}", &bind_addr));
@@ -45,6 +45,8 @@ where
         .port();
 
     let server = http_server.run();
+    let server_handle = server.handle();
+    tokio::spawn(server);
 
     // invoke the op
     op(&format!("http://{}:{}{}", host, port, &uri));
@@ -56,7 +58,7 @@ where
     }
 
     // stop the server
-    server.stop(true).await;
+    server_handle.stop(true).await;
 }
 
 #[allow(dead_code)]

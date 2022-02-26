@@ -32,8 +32,8 @@ jni = "0.19"
 ndk-glue = { version = ">= 0.3, <= 0.6" }
 
 [dev-dependencies]
-actix-web = "3"
-actix-rt = "1"
-actix-files = "0.5"
+actix-web = "4"
+actix-files = "0.6"
 crossbeam-channel = "0.5"
+tokio = { version = "1", features = ["full"] }
 urlencoding = "2.1"

@@ -13,7 +13,7 @@ mod tests {
     // cargo test --test test_wasm32 -- --ignored
     //
     #[ignore]
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_wasm32() {
         let uri = &format!("/{}", TEST_PLATFORM);
         let ipv4 = "127.0.0.1";

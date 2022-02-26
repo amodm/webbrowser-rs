@@ -17,7 +17,7 @@ mod tests {
     // ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/22.1.7171670
     //
     #[ignore]
-    #[tokio::test]
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_android() {
         let uri = format!("/{}", TEST_PLATFORM);
         let ipv4 = get_ipv4_address();

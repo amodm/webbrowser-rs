@@ -153,18 +153,35 @@ pub struct BrowserOptions {
 impl fmt::Display for BrowserOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_fmt(format_args!(
-            "BrowserOptions(supress_output={})",
-            self.suppress_output
+            "BrowserOptions(supress_output={}, target_hint={})",
+            self.suppress_output, self.target_hint,
         ))
     }
 }
 
 impl std::default::Default for BrowserOptions {
     fn default() -> Self {
+        let target_hint = String::from(option_env!("WEBBROWSER_WASM_TARGET").unwrap_or("_blank"));
         BrowserOptions {
             suppress_output: true,
-            target_hint: String::from("_blank"),
+            target_hint,
         }
+    }
+}
+
+impl BrowserOptions {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    pub fn with_suppress_output<'a>(&'a mut self, suppress_output: bool) -> &'a mut Self {
+        self.suppress_output = suppress_output;
+        self
+    }
+
+    pub fn with_target_hint<'a>(&'a mut self, target_hint: &str) -> &'a mut Self {
+        self.target_hint = target_hint.to_owned();
+        self
     }
 }
 
@@ -217,7 +234,7 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
 /// ```no_run
 /// use webbrowser::{open_browser_with_options, Browser, BrowserOptions};
 ///
-/// if open_browser_with_options(Browser::Default, "http://github.com", &BrowserOptions { suppress_output: false }).is_ok() {
+/// if open_browser_with_options(Browser::Default, "http://github.com", BrowserOptions::new().with_suppress_output(false)).is_ok() {
 ///     // ...
 /// }
 /// ```

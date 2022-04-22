@@ -174,12 +174,12 @@ impl BrowserOptions {
         Self::default()
     }
 
-    pub fn with_suppress_output<'a>(&'a mut self, suppress_output: bool) -> &'a mut Self {
+    pub fn with_suppress_output(&mut self, suppress_output: bool) -> &mut Self {
         self.suppress_output = suppress_output;
         self
     }
 
-    pub fn with_target_hint<'a>(&'a mut self, target_hint: &str) -> &'a mut Self {
+    pub fn with_target_hint(&mut self, target_hint: &str) -> &mut Self {
         self.target_hint = target_hint.to_owned();
         self
     }

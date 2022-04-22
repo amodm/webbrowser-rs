@@ -141,12 +141,13 @@ impl FromStr for Browser {
     }
 }
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+#[derive(Debug, Eq, PartialEq, Clone, Hash)]
 /// BrowserOptions to override certain default behaviour
 ///
 /// e.g. by default, we suppress stdout/stderr, but that behaviour can be overridden here
 pub struct BrowserOptions {
     pub suppress_output: bool,
+    pub target_hint: String,
 }
 
 impl fmt::Display for BrowserOptions {
@@ -162,6 +163,7 @@ impl std::default::Default for BrowserOptions {
     fn default() -> Self {
         BrowserOptions {
             suppress_output: true,
+            target_hint: String::from("_blank"),
         }
     }
 }

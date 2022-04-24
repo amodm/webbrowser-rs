@@ -142,11 +142,18 @@ impl FromStr for Browser {
 }
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
-/// BrowserOptions to override certain default behaviour
+/// BrowserOptions to override certain default behaviour. Any option named as a `hint` is
+/// not guaranteed to be honoured.
 ///
 /// e.g. by default, we suppress stdout/stderr, but that behaviour can be overridden here
 pub struct BrowserOptions {
+    /// Determines whether stdout/stderr of the appropriate browser command is suppressed
+    /// or not
     pub suppress_output: bool,
+
+    /// Hint to the browser to open the url in the corresponding
+    /// [target](https://www.w3schools.com/tags/att_a_target.asp). Note that this is just
+    /// a hint, it may or may not be honoured (currently guaranteed only in wasm).
     pub target_hint: String,
 }
 

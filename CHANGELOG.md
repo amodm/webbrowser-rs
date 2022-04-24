@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.7.0] - 2022-04-24 <a name="0.7.0"></a>
+### Added
+- Introduce way to provide a target hint to the browser via `BrowserOptions::target_hint` [PR #45](https://github.com/amodm/webbrowser-rs/pull/45)
+
+### Changed
+- Breaking API change for users of `BrowserOptions`. We've now shifted to a non-consuming builder pattern to avoid future breakages, as more items get added to `BrowserOptions`
+
 ## [0.6.0] - 2022-02-19 <a name="0.6.0"></a>
 ### Changed
 - Define consistent non-blocking behaviour on all UNIX platforms. Now, unless it's specifically a text browser (like lynx etc.), we make sure that the browser is launched in a non-blocking way. See #18 and https://github.com/amodm/webbrowser-rs/commit/614cacf4a67ae0a75323768a1d70c16d792a760d

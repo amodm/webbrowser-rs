@@ -4,6 +4,11 @@ use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 /// and always opens URLs in the same browser where wasm32 vm is running.
 #[inline]
 pub fn open_browser_internal(_: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+    // always return true for a dry run
+    if options.dry_run {
+        return Ok(());
+    }
+
     let window = web_sys::window();
     match window {
         Some(w) => match w.open_with_url_and_target(url, &options.target_hint) {

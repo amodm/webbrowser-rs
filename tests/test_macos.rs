@@ -29,4 +29,22 @@ mod tests {
     async fn test_open_chrome() {
         check_browser(Browser::Chrome, TEST_PLATFORM).await;
     }
+
+    #[test]
+    fn test_existence_default() {
+        assert!(Browser::is_available(), "should have found a browser");
+    }
+
+    #[test]
+    fn test_existence_safari() {
+        assert!(Browser::Safari.exists(), "should have found Safari");
+    }
+
+    #[test]
+    fn test_non_existence_webpositive() {
+        assert!(
+            !Browser::WebPositive.exists(),
+            "should not have found WebPositive",
+        );
+    }
 }

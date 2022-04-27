@@ -3,9 +3,27 @@ use jni::objects::JValue;
 pub use std::os::unix::process::ExitStatusExt;
 use std::process::ExitStatus;
 
-/// Deal with opening of browsers on Android. BrowserOptions are ignored here.
+/// Deal with opening of browsers on Android. Only [Browser::Default] is supported, and
+/// in options, only [BrowserOptions::dry_run] is honoured.
 #[inline]
-pub fn open_browser_internal(_: Browser, url: &str, _: &BrowserOptions) -> Result<()> {
+pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+    match browser {
+        Browser::Default => open_browser_default(url, options),
+        _ => Err(Error::new(
+            ErrorKind::NotFound,
+            "only default browser supported",
+        )),
+    }
+}
+
+/// Open the default browser
+#[inline]
+pub fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
+    // always return true for a dry run
+    if options.dry_run {
+        return Ok(());
+    }
+
     // Create a VM for executing Java calls
     let native_activity = ndk_glue::native_activity();
     let vm_ptr = native_activity.vm();

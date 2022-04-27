@@ -23,7 +23,22 @@ macro_rules! try_browser {
 /// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
 /// 4. Fallback to x-www-browser
 #[inline]
-pub fn open_browser_internal(_: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+    match browser {
+        Browser::Default => open_browser_default(url, options),
+        _ => Err(Error::new(
+            ErrorKind::NotFound,
+            "only default browser supported",
+        )),
+    }
+}
+
+/// Open the default browser.
+///
+/// [BrowserOptions::dry_run] is handled inside [run_command], as all execution paths eventually
+/// rely on it to execute.
+#[inline]
+fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     // we first try with the $BROWSER env
     try_with_browser_env(url, options)
         // allow for haiku's open specifically
@@ -194,6 +209,12 @@ where
 /// Run the specified command in foreground/background
 #[inline]
 fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) -> Result<()> {
+    // if dry_run, we return a true, as executable existence check has
+    // already been done
+    if options.dry_run {
+        return Ok(());
+    }
+
     if background {
         // if we're in background, set stdin/stdout to null and spawn a child, as we're
         // not supposed to have any interaction.

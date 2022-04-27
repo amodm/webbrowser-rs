@@ -4,6 +4,13 @@ The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+## [0.7.1] - 2022-04-27 <a name="0.7.1"></a>
+### Added
+- Introduce `Browser::is_available()` and `Browser::exists(&self)` to check availability of browsers without opening a URL
+
+### Changed
+- Modify `BrowserOptions` to be constructable only via the builder pattern, to prevent future API compatibility issues
+
 ## [0.7.0] - 2022-04-24 <a name="0.7.0"></a>
 ### Added
 - Introduce way to provide a target hint to the browser via `BrowserOptions::target_hint` [PR #45](https://github.com/amodm/webbrowser-rs/pull/45)

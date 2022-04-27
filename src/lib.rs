@@ -160,7 +160,7 @@ impl FromStr for Browser {
 
 #[derive(Debug, Eq, PartialEq, Clone, Hash)]
 /// BrowserOptions to override certain default behaviour. Any option named as a `hint` is
-/// not guaranteed to be honoured.
+/// not guaranteed to be honoured. Use [BrowserOptions::new()] to create.
 ///
 /// e.g. by default, we suppress stdout/stderr, but that behaviour can be overridden here
 pub struct BrowserOptions {
@@ -190,6 +190,7 @@ impl std::default::Default for BrowserOptions {
 }
 
 impl BrowserOptions {
+    /// Create a new instance. Configure it with one of the `with_` methods.
     pub fn new() -> Self {
         Self::default()
     }

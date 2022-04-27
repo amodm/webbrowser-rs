@@ -12,4 +12,14 @@ mod tests {
     async fn test_open_default() {
         check_browser(Browser::Default, TEST_PLATFORM).await;
     }
+
+    #[test]
+    fn test_existence_default() {
+        assert!(Browser::is_available(), "should have found a browser");
+    }
+
+    #[test]
+    fn test_non_existence_safari() {
+        assert!(!Browser::Safari.exists(), "should not have found Safari");
+    }
 }

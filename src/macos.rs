@@ -18,7 +18,14 @@ pub fn open_browser_internal(
     let url = &url_s;
     let mut cmd = Command::new("open");
     match browser {
-        Browser::Default => run_command(cmd.arg(url), options),
+        Browser::Default => {
+            // always return true for a dry run for default browser
+            if options.dry_run {
+                return Ok(());
+            }
+
+            run_command(cmd.arg(url), options)
+        }
         _ => {
             let app: Option<&str> = match browser {
                 Browser::Firefox => Some("Firefox"),
@@ -29,7 +36,23 @@ pub fn open_browser_internal(
                 _ => None,
             };
             match app {
-                Some(name) => run_command(cmd.arg("-a").arg(name).arg(url), options),
+                Some(name) => {
+                    if options.dry_run {
+                        // in case of a dry run, we just check for the existence of the app dir
+                        let md = std::fs::metadata(format!("/Applications/{}.app", name));
+                        if md.map(|x| x.is_dir()).unwrap_or(false) {
+                            Ok(())
+                        } else {
+                            Err(Error::new(
+                                ErrorKind::NotFound,
+                                format!("Browser {} not available", name),
+                            ))
+                        }
+                    } else {
+                        // run the command only if not dry_run
+                        run_command(cmd.arg("-a").arg(name).arg(url), options)
+                    }
+                }
                 None => Err(Error::new(
                     ErrorKind::NotFound,
                     format!("Unsupported browser {:?}", browser),

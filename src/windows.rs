@@ -10,9 +10,9 @@ use widestring::U16CString;
 /// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
 /// function.
 ///
-/// We ignore BrowserOptions on Windows.
+/// We ignore BrowserOptions on Windows, except for honouring [BrowserOptions::dry_run]
 #[inline]
-pub fn open_browser_internal(browser: Browser, url: &str, _: &BrowserOptions) -> Result<()> {
+pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
@@ -20,6 +20,11 @@ pub fn open_browser_internal(browser: Browser, url: &str, _: &BrowserOptions) ->
     use winapi::um::winuser::SW_SHOWNORMAL;
     match browser {
         Browser::Default => {
+            // always return true for a dry run for default browser
+            if options.dry_run {
+                return Ok(());
+            }
+
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
             let url =
                 U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;

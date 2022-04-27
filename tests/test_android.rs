@@ -9,6 +9,7 @@ mod tests {
     use std::fs;
     use std::path::PathBuf;
     use std::process::Command;
+    use webbrowser::Browser;
 
     // to run this test, run it as:
     // cargo test --test test_android -- --ignored
@@ -73,5 +74,15 @@ mod tests {
             .next()
             .expect("no ip address found")
             .into()
+    }
+
+    #[test]
+    fn test_existence_default() {
+        assert!(Browser::is_available(), "should have found a browser");
+    }
+
+    #[test]
+    fn test_non_existence_safari() {
+        assert!(!Browser::Safari.exists(), "should not have found Safari");
     }
 }

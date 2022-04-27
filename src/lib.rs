@@ -88,6 +88,23 @@ pub enum Browser {
     WebPositive,
 }
 
+impl Browser {
+    /// Returns true if there is likely a browser detected in the system
+    pub fn is_available() -> bool {
+        Browser::Default.exists()
+    }
+
+    /// Returns true if this specific browser is detected in the system
+    pub fn exists(&self) -> bool {
+        open_browser_with_options(
+            *self,
+            "https://rootnet.in",
+            BrowserOptions::new().with_dry_run(true),
+        )
+        .is_ok()
+    }
+}
+
 ///The Error type for parsing a string into a Browser.
 #[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
 pub struct ParseBrowserError;
@@ -147,21 +164,16 @@ impl FromStr for Browser {
 ///
 /// e.g. by default, we suppress stdout/stderr, but that behaviour can be overridden here
 pub struct BrowserOptions {
-    /// Determines whether stdout/stderr of the appropriate browser command is suppressed
-    /// or not
-    pub suppress_output: bool,
-
-    /// Hint to the browser to open the url in the corresponding
-    /// [target](https://www.w3schools.com/tags/att_a_target.asp). Note that this is just
-    /// a hint, it may or may not be honoured (currently guaranteed only in wasm).
-    pub target_hint: String,
+    suppress_output: bool,
+    target_hint: String,
+    dry_run: bool,
 }
 
 impl fmt::Display for BrowserOptions {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         f.write_fmt(format_args!(
-            "BrowserOptions(supress_output={}, target_hint={})",
-            self.suppress_output, self.target_hint,
+            "BrowserOptions(supress_output={}, target_hint={}, dry_run={})",
+            self.suppress_output, self.target_hint, self.dry_run
         ))
     }
 }
@@ -172,6 +184,7 @@ impl std::default::Default for BrowserOptions {
         BrowserOptions {
             suppress_output: true,
             target_hint,
+            dry_run: false,
         }
     }
 }
@@ -181,13 +194,25 @@ impl BrowserOptions {
         Self::default()
     }
 
+    /// Determines whether stdout/stderr of the appropriate browser command is suppressed
+    /// or not
     pub fn with_suppress_output(&mut self, suppress_output: bool) -> &mut Self {
         self.suppress_output = suppress_output;
         self
     }
 
+    /// Hint to the browser to open the url in the corresponding
+    /// [target](https://www.w3schools.com/tags/att_a_target.asp). Note that this is just
+    /// a hint, it may or may not be honoured (currently guaranteed only in wasm).
     pub fn with_target_hint(&mut self, target_hint: &str) -> &mut Self {
         self.target_hint = target_hint.to_owned();
+        self
+    }
+
+    /// Do not do an actual execution, just return true if this would've likely
+    /// succeeded. Note the "likely" here - it's still indicative than guaranteed.
+    pub fn with_dry_run(&mut self, dry_run: bool) -> &mut Self {
+        self.dry_run = dry_run;
         self
     }
 }

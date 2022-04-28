@@ -4,11 +4,11 @@
 [![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
 [![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)
 
-![Linux Build](https://github.com/amodm/webbrowser-rs/workflows/Linux/badge.svg?branch=master&x=1)
-![Windows Build](https://github.com/amodm/webbrowser-rs/workflows/Windows/badge.svg?branch=master&x=1)
-![MacOS Build](https://github.com/amodm/webbrowser-rs/workflows/MacOS/badge.svg?branch=master&x=1)
-![Android Build](https://github.com/amodm/webbrowser-rs/workflows/Android/badge.svg?branch=master&x=1)
-![WASM Build](https://github.com/amodm/webbrowser-rs/workflows/WASM/badge.svg?branch=master&x=1)
+![Linux Build](https://github.com/amodm/webbrowser-rs/workflows/Linux/badge.svg?branch=main&x=1)
+![Windows Build](https://github.com/amodm/webbrowser-rs/workflows/Windows/badge.svg?branch=main&x=1)
+![MacOS Build](https://github.com/amodm/webbrowser-rs/workflows/MacOS/badge.svg?branch=main&x=1)
+![Android Build](https://github.com/amodm/webbrowser-rs/workflows/Android/badge.svg?branch=main&x=1)
+![WASM Build](https://github.com/amodm/webbrowser-rs/workflows/WASM/badge.svg?branch=main&x=1)
 
 Rust library to open URLs in the web browsers available on a platform
 

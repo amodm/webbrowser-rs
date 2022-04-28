@@ -4,7 +4,7 @@ on:
   push:
     branches-ignore: [ '**win**', '**android**', '**linux**', '**bsd**', '**haiku**', '**wasm**', '**ios**' ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
 
 env:
   CARGO_TERM_COLOR: always

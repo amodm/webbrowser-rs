@@ -3,7 +3,15 @@ use objc::{class, msg_send, runtime::Object, sel, sel_impl};
 
 /// Deal with opening of browsers on iOS
 #[inline]
-pub fn open_browser_internal(url_raw: &str) -> Result<()> {
+pub fn open_browser_internal(
+    _browser: Browser,
+    url: &str,
+    _options: &BrowserOptions,
+) -> Result<()> {
+    // always return true for a dry run
+    if _options.dry_run {
+        return Ok(());
+    }
     let url_s: String = match url::Url::parse(url_raw) {
         Ok(u) => u.as_str().into(),
         Err(_) => url_raw.into(),

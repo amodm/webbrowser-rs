@@ -22,13 +22,14 @@
 //! | android  | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
 //! | haiku    | ✅ (experimental) | default only | ❌ |
-//! | ios      | ❌        | unsupported | ❌ |
+//! | ios      | ✅        | default only | ❌ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
 //! * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
 //! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be overridden by `webbrowser::open_browser_with_options`.
 
+#[cfg_attr(target_os = "ios", path = "ios.rs")]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "android", path = "android.rs")]
 #[cfg_attr(target_arch = "wasm32", path = "wasm.rs")]
@@ -54,6 +55,7 @@ mod os;
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
+    target_os = "ios",
     target_arch = "wasm32"
 )))]
 compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
@@ -96,12 +98,19 @@ impl Browser {
 
     /// Returns true if this specific browser is detected in the system
     pub fn exists(&self) -> bool {
-        open_browser_with_options(
-            *self,
-            "https://rootnet.in",
-            BrowserOptions::new().with_dry_run(true),
-        )
-        .is_ok()
+        #[cfg(not(target_os = "ios"))]
+        {
+            open_browser_with_options(
+                *self,
+                "https://rootnet.in",
+                BrowserOptions::new().with_dry_run(true),
+            )
+            .is_ok()
+        }
+        #[cfg(target_os = "ios")]
+        {
+            true
+        }
     }
 }
 
@@ -238,6 +247,7 @@ impl BrowserOptions {
 ///     // ...
 /// }
 /// ```
+#[cfg(not(target_os = "ios"))]
 pub fn open(url: &str) -> Result<()> {
     open_browser(Browser::Default, url)
 }
@@ -253,6 +263,7 @@ pub fn open(url: &str) -> Result<()> {
 ///     // ...
 /// }
 /// ```
+#[cfg(not(target_os = "ios"))]
 pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
     open_browser_with_options(browser, url, &BrowserOptions::default())
 }
@@ -271,6 +282,7 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
 ///     // ...
 /// }
 /// ```
+#[cfg(not(target_os = "ios"))]
 pub fn open_browser_with_options(
     browser: Browser,
     url: &str,
@@ -281,6 +293,16 @@ pub fn open_browser_with_options(
         Err(_) => url.into(),
     };
     os::open_browser_internal(browser, &url_s, options)
+}
+
+/// Opens the URL on iOS.
+#[cfg(target_os = "ios")]
+pub fn open(url: &str) -> Result<()> {
+    let url_s: String = match url::Url::parse(url) {
+        Ok(u) => u.as_str().into(),
+        Err(_) => url.into(),
+    };
+    os::open_browser_internal(&url_s)
 }
 
 #[test]

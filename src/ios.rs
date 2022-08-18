@@ -1,4 +1,4 @@
-use crate::{Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 use objc::{class, msg_send, runtime::Object, sel, sel_impl};
 
 /// Deal with opening of browsers on iOS
@@ -12,9 +12,9 @@ pub fn open_browser_internal(
     if _options.dry_run {
         return Ok(());
     }
-    let url_s: String = match url::Url::parse(url_raw) {
+    let url_s: String = match url::Url::parse(url) {
         Ok(u) => u.as_str().into(),
-        Err(_) => url_raw.into(),
+        Err(_) => url.into(),
     };
     unsafe {
         let app: *mut Object = msg_send![class!(UIApplication), sharedApplication];

@@ -58,7 +58,9 @@ mod os;
     target_os = "ios",
     target_arch = "wasm32"
 )))]
-compile_error!("Only Windows, Mac OS, Linux, *BSD and Haiku and Wasm32 are currently supported");
+compile_error!(
+    "Only Windows, Mac OS, iOS, Linux, *BSD and Haiku and Wasm32 are currently supported"
+);
 
 use std::default::Default;
 use std::io::{Error, ErrorKind, Result};

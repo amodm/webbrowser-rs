@@ -100,19 +100,12 @@ impl Browser {
 
     /// Returns true if this specific browser is detected in the system
     pub fn exists(&self) -> bool {
-        #[cfg(not(target_os = "ios"))]
-        {
-            open_browser_with_options(
-                *self,
-                "https://rootnet.in",
-                BrowserOptions::new().with_dry_run(true),
-            )
-            .is_ok()
-        }
-        #[cfg(target_os = "ios")]
-        {
-            true
-        }
+        open_browser_with_options(
+            *self,
+            "https://rootnet.in",
+            BrowserOptions::new().with_dry_run(true),
+        )
+        .is_ok()
     }
 }
 
@@ -249,7 +242,6 @@ impl BrowserOptions {
 ///     // ...
 /// }
 /// ```
-#[cfg(not(target_os = "ios"))]
 pub fn open(url: &str) -> Result<()> {
     open_browser(Browser::Default, url)
 }
@@ -265,7 +257,6 @@ pub fn open(url: &str) -> Result<()> {
 ///     // ...
 /// }
 /// ```
-#[cfg(not(target_os = "ios"))]
 pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
     open_browser_with_options(browser, url, &BrowserOptions::default())
 }
@@ -284,7 +275,6 @@ pub fn open_browser(browser: Browser, url: &str) -> Result<()> {
 ///     // ...
 /// }
 /// ```
-#[cfg(not(target_os = "ios"))]
 pub fn open_browser_with_options(
     browser: Browser,
     url: &str,
@@ -295,16 +285,6 @@ pub fn open_browser_with_options(
         Err(_) => url.into(),
     };
     os::open_browser_internal(browser, &url_s, options)
-}
-
-/// Opens the URL on iOS.
-#[cfg(target_os = "ios")]
-pub fn open(url: &str) -> Result<()> {
-    let url_s: String = match url::Url::parse(url) {
-        Ok(u) => u.as_str().into(),
-        Err(_) => url.into(),
-    };
-    os::open_browser_internal(&url_s)
 }
 
 #[test]

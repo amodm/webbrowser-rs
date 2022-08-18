@@ -31,6 +31,10 @@ widestring = "0.5"
 jni = "0.19"
 ndk-glue = { version = ">= 0.3, <= 0.6" }
 
+[target.'cfg(target_os = "ios")'.dependencies]
+raw-window-handle = "0.5.0"
+objc = "0.2.7"
+
 [dev-dependencies]
 actix-web = "4"
 actix-files = "0.6"

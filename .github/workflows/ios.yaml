@@ -29,10 +29,6 @@ jobs:
           target: x86_64-apple-ios
           override: true
           components: rustfmt, clippy
-      - uses: actions-rs/cargo@v1
-        name: Compile
-        with:
-          command: build
       - name: Run Tests
         env:
           WEBBROWSER_DEBUG_TESTS: "true"

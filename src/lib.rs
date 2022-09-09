@@ -22,7 +22,7 @@
 //! | android  | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
 //! | haiku    | ✅ (experimental) | default only | ❌ |
-//! | ios      | ✅        | default only | ❌ |
+//! | ios      | ✅        | default only | ✅ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:

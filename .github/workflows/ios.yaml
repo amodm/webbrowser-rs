@@ -29,6 +29,14 @@ jobs:
           target: x86_64-apple-ios
           override: true
           components: rustfmt, clippy
+      - name: Configure and start iOS Simulator
+        run: |
+          set -e
+          open -a Simulator
+          sleep 5
+          DEVID=$(xcrun simctl create iphone_11-ios_15_5 com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-5)
+          xcrun simctl boot $DEVID
+          sleep 5
       - name: Run Tests
         env:
           WEBBROWSER_DEBUG_TESTS: "true"

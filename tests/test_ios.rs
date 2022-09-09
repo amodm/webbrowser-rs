@@ -13,6 +13,8 @@ mod tests {
 
     // to run this test, run it as:
     // cargo test --test test_ios -- --ignored
+    //
+    // MAKE SURE: an iOS simulator instance is already running
     #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_ios() {
@@ -21,13 +23,6 @@ mod tests {
 
         let mut app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         app_dir.push("tests/test-ios-app");
-
-        // open Simulator
-        run_cmd(
-            &app_dir,
-            "failed to open Simulator",
-            &["open", "-a", "Simulator"],
-        );
 
         // build test glue code
         let mut glue_dir = PathBuf::from(&app_dir);

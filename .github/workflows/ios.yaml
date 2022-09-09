@@ -29,14 +29,14 @@ jobs:
           target: x86_64-apple-ios
           override: true
           components: rustfmt, clippy
-      - name: Select xcode version
-        run: sudo xcode-select -s /Applications/Xcode_13.4.app/Contents/Developer
       - name: Configure and start iOS Simulator
         run: |
           set -e
           open -a Simulator
           sleep 5
-          DEVID=$(xcrun simctl create iphone_11-ios_15_5 com.apple.CoreSimulator.SimDeviceType.iPhone-11 com.apple.CoreSimulator.SimRuntime.iOS-15-5)
+          IOSRUNTIME=$(xcrun simctl list 2>&1 | egrep '^iOS' | head -n 1 | awk '{ print $NF }')
+          IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | grep -v ' SE ' | tail -n 1 | tr -d '()' | awk '{ print $NF }')
+          DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
           xcrun simctl boot $DEVID
           sleep 5
       - name: Run Tests

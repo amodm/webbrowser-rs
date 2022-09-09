@@ -1,0 +1,12 @@
+[package]
+name = "testglue"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[lib]
+name = "testglue"
+crate-type = ["staticlib"]
+
+[dependencies]
+webbrowser = { path = "../../.." }

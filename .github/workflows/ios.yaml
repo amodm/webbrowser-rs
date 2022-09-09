@@ -1,0 +1,58 @@
+name: iOS
+
+on:
+  push:
+    branches-ignore: [ '**win**', '**android**', '**linux**', '**bsd**', '**haiku**', '**wasm**', '**macos**' ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  build:
+    name: Build
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        rust: [stable]
+    continue-on-error: ${{ matrix.rust != 'stable' }}
+    steps:
+      - uses: actions/checkout@v2
+        name: Checkout
+      - uses: actions-rs/toolchain@v1
+        name: Install Rust Toolchain
+        with:
+          profile: minimal
+          toolchain: ${{ matrix.rust }}
+          target: x86_64-apple-ios
+          override: true
+          components: rustfmt, clippy
+      - name: Configure and start iOS Simulator
+        run: |
+          set -e
+          open -a Simulator
+          sleep 5
+          IOSRUNTIME=$(xcrun simctl list 2>&1 | egrep '^iOS' | head -n 1 | awk '{ print $NF }')
+          IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | grep -v ' SE ' | tail -n 1 | tr -d '()' | awk '{ print $NF }')
+          DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
+          echo "==== using device $IOSDEV, $IOSRUNTIME ===="
+          xcrun simctl boot $DEVID
+          sleep 5
+          xcrun simctl list 2>&1
+      - name: Run Tests
+        env:
+          WEBBROWSER_DEBUG_TESTS: "true"
+          WEBBROWSER_FORCE_NO_SUPPRESS: "true"
+        run: cargo test --verbose --test test_ios -- --include-ignored
+      - uses: actions-rs/cargo@v1
+        name: Check Code Formatting
+        with:
+          command: fmt
+          args: --all -- --check
+      - uses: actions-rs/cargo@v1
+        name: Lints
+        with:
+          command: clippy
+          args: --all-targets -- -D warnings

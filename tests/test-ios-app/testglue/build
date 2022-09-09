@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+set -e
+
+if [ ! -f Cargo.toml ]; then
+    echo "error: needs to be run from glue project root" >&2
+    exit 1
+fi
+
+# determine target arch
+if [ "$(uname -m)" == "x86_64" ]; then
+    TARGET_ARCH="x86_64-apple-ios"
+else
+    TARGET_ARCH="aarch64-apple-ios-sim"
+fi
+
+echo "===== building test glue for ios on $TARGET_ARCH ====="
+cargo build --target $TARGET_ARCH
+cd target
+
+ln -sf "$TARGET_ARCH" target

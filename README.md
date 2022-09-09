@@ -7,6 +7,7 @@
 ![Linux Build](https://github.com/amodm/webbrowser-rs/workflows/Linux/badge.svg?branch=main&x=1)
 ![Windows Build](https://github.com/amodm/webbrowser-rs/workflows/Windows/badge.svg?branch=main&x=1)
 ![MacOS Build](https://github.com/amodm/webbrowser-rs/workflows/MacOS/badge.svg?branch=main&x=1)
+![iOS Build](https://github.com/amodm/webbrowser-rs/workflows/iOS/badge.svg?branch=main&x=1)
 ![Android Build](https://github.com/amodm/webbrowser-rs/workflows/Android/badge.svg?branch=main&x=1)
 ![WASM Build](https://github.com/amodm/webbrowser-rs/workflows/WASM/badge.svg?branch=main&x=1)
 
@@ -39,7 +40,7 @@ if webbrowser::open("http://github.com").is_ok() {
 | android  | ✅        | default only | ✅ |
 | wasm     | ✅        | default only | ✅ |
 | haiku    | ✅ (experimental) | default only | ❌ |
-| ios      | ❌        | default only | ❌ |
+| ios      | ✅        | default only | ✅ |
 
 ## Consistent Behaviour
 `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -50,7 +51,8 @@ if webbrowser::open("http://github.com").is_ok() {
 
 PRs invited for
 
-* Support for other platforms, e.g. iOS
+* Bugs
+* Supporting non-default browser invocation on any platform
 
 Important note (while testing):
 

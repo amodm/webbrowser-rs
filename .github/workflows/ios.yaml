@@ -40,6 +40,7 @@ jobs:
           echo "==== using device $IOSDEV, $IOSRUNTIME ===="
           xcrun simctl boot $DEVID
           sleep 5
+          xcrun simctl list 2>&1
       - name: Run Tests
         env:
           WEBBROWSER_DEBUG_TESTS: "true"

@@ -9,6 +9,6 @@ crate-type = ["lib", "cdylib"]
 
 [dependencies]
 jni = "0.19"
-ndk-glue = "0.6"
+ndk-glue = "0.7"
 webbrowser = { path = "../.." }
 

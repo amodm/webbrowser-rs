@@ -1,7 +1,6 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 use jni::objects::JValue;
 pub use std::os::unix::process::ExitStatusExt;
-use std::process::ExitStatus;
 
 /// Deal with opening of browsers on Android. Only [Browser::Default] is supported, and
 /// in options, only [BrowserOptions::dry_run] is honoured.

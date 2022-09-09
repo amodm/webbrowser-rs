@@ -20,12 +20,20 @@ mod tests {
     #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_android() {
+        let mut app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        app_dir.push("tests/test-android-app");
         let uri = format!("/{}", TEST_PLATFORM);
+
+        // prebuild to make sure time within check_request_received_using() is minimised
+        let _ = Command::new("cargo")
+            .arg("apk")
+            .arg("build")
+            .current_dir(&app_dir)
+            .status();
+
         let ipv4 = get_ipv4_address();
         check_request_received_using(uri, &ipv4, |url| {
             // modify android app code to use the correct url
-            let mut app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
-            app_dir.push("tests/test-android-app");
             let mut lib_rs = PathBuf::from(&app_dir);
             lib_rs.push("src/lib.rs");
             let old_code =
@@ -42,6 +50,7 @@ mod tests {
                 .collect::<Vec<String>>()
                 .join("\n");
             fs::write(&lib_rs, &new_code).expect("failed to modify src/lib.rs");
+            println!("modified src/lib.rs to use {}", url);
 
             // invoke app in android
             let apk_run_status = Command::new("cargo")

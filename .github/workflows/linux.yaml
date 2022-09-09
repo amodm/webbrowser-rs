@@ -15,6 +15,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     strategy:
+      max-parallel: 1
       matrix:
         rust: [stable, beta, nightly]
     continue-on-error: ${{ matrix.rust != 'stable' }}
@@ -50,4 +51,3 @@ jobs:
           command: clippy
           args: --all-targets -- -D warnings
 
-# TODO:amodm:add deployment of doc

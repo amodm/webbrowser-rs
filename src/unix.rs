@@ -163,7 +163,7 @@ fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
 #[inline]
 fn is_text_browser(pb: &Path) -> bool {
     for browser in TEXT_BROWSERS.iter() {
-        if pb.ends_with(&browser) {
+        if pb.ends_with(browser) {
             return true;
         }
     }

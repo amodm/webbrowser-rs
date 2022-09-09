@@ -63,7 +63,7 @@ mod tests {
                     "-configuration",
                     "Debug",
                     "-destination",
-                    "platform=iOS Simulator,name=iPhone 11,OS=15.5",
+                    "platform=iOS Simulator,name=iphone-latest,OS=latest",
                     "-derivedDataPath",
                     "build",
                 ],

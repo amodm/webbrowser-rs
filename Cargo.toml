@@ -28,8 +28,8 @@ winapi = { version = "0.3", features = ["combaseapi", "objbase", "shellapi", "wi
 widestring = { version = ">= 0.5, <=1.0" }
 
 [target.'cfg(target_os = "android")'.dependencies]
-jni = "0.19"
-ndk-glue = { version = ">= 0.3, <= 0.7" }
+jni = "0.20"
+ndk-context = "0.1"
 
 [target.'cfg(target_os = "ios")'.dependencies]
 raw-window-handle = "0.5.0"
@@ -41,3 +41,6 @@ actix-files = "0.6"
 crossbeam-channel = "0.5"
 tokio = { version = "1", features = ["full"] }
 urlencoding = "2.1"
+
+[target.'cfg(target_os = "android")'.dev-dependencies]
+ndk-glue = { version = ">= 0.3, <= 0.7" }

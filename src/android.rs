@@ -24,9 +24,11 @@ pub fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     }
 
     // Create a VM for executing Java calls
-    let native_activity = ndk_glue::native_activity();
-    let vm_ptr = native_activity.vm();
-    let vm = unsafe { jni::JavaVM::from_raw(vm_ptr) }.unwrap();
+    let ctx = ndk_context::android_context();
+    let vm = unsafe {
+        jni::JavaVM::from_raw(ctx.vm() as _).expect("Expected to find JVM via ndk_context crate")
+    };
+    let activity = unsafe { jni::objects::JObject::from_raw(ctx.context() as _) };
     let env = vm.attach_current_thread().map_err(|_| -> Error {
         Error::new(ErrorKind::Other, "Failed to attach current thread")
     })?;
@@ -71,7 +73,7 @@ pub fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
 
     // Start the intent activity.
     env.call_method(
-        native_activity.activity(),
+        activity,
         "startActivity",
         "(Landroid/content/Intent;)V",
         &[JValue::Object(intent)],

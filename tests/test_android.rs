@@ -49,7 +49,7 @@ mod tests {
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
-            fs::write(&lib_rs, &new_code).expect("failed to modify src/lib.rs");
+            fs::write(&lib_rs, new_code).expect("failed to modify src/lib.rs");
             println!("modified src/lib.rs to use {}", url);
 
             // invoke app in android

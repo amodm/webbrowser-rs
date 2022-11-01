@@ -28,7 +28,7 @@ mod tests {
             dst_html.push("pkg/test.html");
             let old_html = fs::read_to_string(&src_html).expect("failed to read test.html");
             let new_html = old_html.replace("DYNAMIC_URL_TBD", url);
-            fs::write(&dst_html, &new_html).expect("failed to update dst test.html");
+            fs::write(&dst_html, new_html).expect("failed to update dst test.html");
 
             // ensure favicon is present
             let mut favicon = PathBuf::from(&app_dir);

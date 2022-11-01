@@ -47,7 +47,7 @@ mod tests {
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
-            fs::write(&swift_src, &new_code).expect("failed to modify ContentView.swift");
+            fs::write(&swift_src, new_code).expect("failed to modify ContentView.swift");
 
             // build app
             run_cmd(

@@ -3,7 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.1] - 2022-11-01 <a name="0.8.1"></a>
+### Fixed
+- On Android, app crashes due to ndk-glue dependency. See #51 and #52. Thanks to [@rib](https://github.com/rib) for the fix.
+
 ## [0.8.0] - 2022-09-09 <a name="0.8.0"></a>
 ### Added
 - Support for iOS is finally here. Thanks to [hakolao](https://github.com/hakolao) for this. See [PR #48](https://github.com/amodm/webbrowser-rs/pull/48)
@@ -105,7 +108,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/amodm/webbrowser-rs/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/amodm/webbrowser-rs/compare/v0.7.1...v0.8.0
 [0.7.1]: https://github.com/amodm/webbrowser-rs/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/amodm/webbrowser-rs/compare/v0.6.0...v0.7.0

@@ -23,21 +23,20 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
         return Ok(());
     }
 
+    // first we try to see if we're in a termux env, because if we are, then
+    // the android context may not have been initialized, and it'll panic
+    if try_for_termux(url, options).is_ok() {
+        return Ok(());
+    }
+
     // Create a VM for executing Java calls
     let ctx = ndk_context::android_context();
-    let vm = match unsafe { jni::JavaVM::from_raw(ctx.vm() as _) } {
-        Ok(x) => x,
-        Err(_) => {
-            // if we didn't get the vm instance, maybe we're running
-            // inside a termux, so try with that
-            return try_for_termux(url, options).map_err(|_| -> Error {
-                Error::new(
-                    ErrorKind::NotFound,
-                    "Expected to find JVM via ndk_context crate",
-                )
-            });
-        }
-    };
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm() as _) }.map_err(|_| -> Error {
+        Error::new(
+            ErrorKind::NotFound,
+            "Expected to find JVM via ndk_context crate",
+        )
+    })?;
 
     let activity = unsafe { jni::objects::JObject::from_raw(ctx.context() as _) };
     let env = vm.attach_current_thread().map_err(|_| -> Error {

@@ -2,7 +2,7 @@
 
 [![Current Crates.io Version](https://img.shields.io/crates/v/webbrowser.svg)](https://crates.io/crates/webbrowser)
 [![Crates.io Downloads](https://img.shields.io/crates/d/webbrowser.svg)](https://crates.io/crates/webbrowser)
-[![License](https://img.shields.io/crates/l/webbrowser.svg)](LICENSE-MIT)
+[![License](https://img.shields.io/crates/l/webbrowser.svg)](#license)
 
 ![Linux Build](https://github.com/amodm/webbrowser-rs/workflows/Linux/badge.svg?branch=main&x=1)
 ![Windows Build](https://github.com/amodm/webbrowser-rs/workflows/Windows/badge.svg?branch=main&x=1)
@@ -62,6 +62,8 @@ Important note (while testing):
 When contributing, please note that your work will be dual licensed as MIT + Apache-2.0 (see below).
 
 ## License
+
+`SPDX-License-Identifier: Apache-2.0 OR MIT`
 
 Licensed under either of
 

@@ -20,7 +20,7 @@ macro_rules! try_browser {
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
 /// 2. Attempt to use xdg-open
-/// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
+/// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc. incl. WSL
 /// 4. Fallback to x-www-browser
 #[inline]
 pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
@@ -62,6 +62,10 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
             "xfce" => try_browser!(options, "exo-open", url)
                 .or_else(|_| try_browser!(options, "gio", "open", url))
                 .or_else(|_| try_browser!(options, "gvfs-open", url)),
+
+            "wsl" => try_browser!(options, "cmd.exe", "/c", "start", url)
+                .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
+                .or_else(|_| try_browser!(options, "wsl-open", url)),
 
             _ => Err(r),
         })
@@ -116,6 +120,18 @@ fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
     ))
 }
 
+/// Check if we are inside WSL on Windows
+#[inline]
+fn is_wsl() -> bool {
+    if let Ok(b) = std::fs::read("/proc/sys/kernel/osrelease") {
+        if let Ok(s) = std::str::from_utf8(&b) {
+            let a = s.to_ascii_lowercase();
+            return a.contains("microsoft") || a.contains("wsl");
+        }
+    }
+    false
+}
+
 /// Detect the desktop environment
 #[inline]
 fn guess_desktop_env() -> &'static str {
@@ -142,6 +158,9 @@ fn guess_desktop_env() -> &'static str {
     } else if xcd.contains("xfce") || dsession.contains("xfce") {
         // XFCE
         "xfce"
+    } else if is_wsl() {
+        // WSL
+        "wsl"
     } else {
         // All others
         unknown
@@ -230,7 +249,7 @@ fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) ->
     } else {
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
         // till completion.
-        // We also specifically don't supress anything here, because we're running here
+        // We also specifically don't suppress anything here, because we're running here
         // most likely because of a text browser
         cmd.status().and_then(|status| {
             if status.success() {

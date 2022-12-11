@@ -3,7 +3,7 @@ extern crate winapi;
 
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
 pub use std::os::windows::process::ExitStatusExt;
-use std::ptr;
+use std::{mem, ptr};
 use widestring::U16CString;
 
 /// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
@@ -16,7 +16,9 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
     use winapi::shared::winerror::SUCCEEDED;
     use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
     use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
-    use winapi::um::shellapi::ShellExecuteW;
+    use winapi::um::shellapi::{
+        ShellExecuteExW, SEE_MASK_CLASSNAME, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+    };
     use winapi::um::winuser::SW_SHOWNORMAL;
     match browser {
         Browser::Default => {
@@ -26,6 +28,7 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
             }
 
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
+            static HTTP: &[u16] = &['h' as u16, 't' as u16, 't' as u16, 'p' as u16, 0x0000];
             let url =
                 U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
             let code = unsafe {
@@ -33,14 +36,16 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
                     ptr::null_mut(),
                     COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
                 );
-                let code = ShellExecuteW(
-                    ptr::null_mut(),
-                    OPEN.as_ptr(),
-                    url.as_ptr(),
-                    ptr::null(),
-                    ptr::null(),
-                    SW_SHOWNORMAL,
-                ) as usize as i32;
+                let mut sei: SHELLEXECUTEINFOW = Default::default();
+                sei.cbSize = mem::size_of::<SHELLEXECUTEINFOW>() as u32;
+                sei.nShow = SW_SHOWNORMAL;
+                sei.lpFile = url.as_ptr();
+                sei.fMask = SEE_MASK_CLASSNAME | SEE_MASK_NOCLOSEPROCESS;
+                sei.lpVerb = OPEN.as_ptr();
+                sei.lpClass = HTTP.as_ptr();
+                ShellExecuteExW(&mut sei);
+                let code = sei.hInstApp as usize as i32;
+
                 if SUCCEEDED(coinitializeex_result) {
                     CoUninitialize();
                 }

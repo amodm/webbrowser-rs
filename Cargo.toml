@@ -24,7 +24,7 @@ features = [
 wasm-console = ["web-sys/console"]
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["combaseapi", "objbase", "shellapi", "winerror"] }
+winapi = { version = "0.3", features = ["combaseapi", "impl-default", "objbase", "shellapi", "winerror"] }
 widestring = { version = ">= 0.5, <=1.0" }
 
 [target.'cfg(target_os = "android")'.dependencies]

@@ -36,13 +36,15 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
                     ptr::null_mut(),
                     COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
                 );
-                let mut sei: SHELLEXECUTEINFOW = Default::default();
-                sei.cbSize = mem::size_of::<SHELLEXECUTEINFOW>() as u32;
-                sei.nShow = SW_SHOWNORMAL;
-                sei.lpFile = url.as_ptr();
-                sei.fMask = SEE_MASK_CLASSNAME | SEE_MASK_NOCLOSEPROCESS;
-                sei.lpVerb = OPEN.as_ptr();
-                sei.lpClass = HTTP.as_ptr();
+                let mut sei = SHELLEXECUTEINFOW {
+                    cbSize: mem::size_of::<SHELLEXECUTEINFOW>() as u32,
+                    nShow: SW_SHOWNORMAL,
+                    lpFile: url.as_ptr(),
+                    fMask: SEE_MASK_CLASSNAME | SEE_MASK_NOCLOSEPROCESS,
+                    lpVerb: OPEN.as_ptr(),
+                    lpClass: HTTP.as_ptr(),
+                    ..Default::default()
+                };
                 ShellExecuteExW(&mut sei);
                 let code = sei.hInstApp as usize as i32;
 

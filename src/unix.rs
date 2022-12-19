@@ -407,6 +407,108 @@ static TEXT_BROWSERS: [&str; 9] = [
 ];
 
 #[cfg(test)]
-pub mod tests_xdg {
-    pub use super::*;
+mod tests_xdg {
+    use super::*;
+    use std::fs::File;
+    use std::io::Write;
+
+    fn get_temp_path(name: &str, suffix: &str) -> String {
+        let pid = std::process::id();
+        std::env::temp_dir()
+            .join(format!("{}.{}.{}", name, pid, suffix))
+            .into_os_string()
+            .into_string()
+            .expect("failed to convert into string")
+    }
+
+    #[test]
+    fn test_xdg_open_local_file() {
+        let _ = env_logger::try_init();
+
+        // ensure flag file is not existing
+        let flag_path = get_temp_path("test_xdg", "flag");
+        let _ = std::fs::remove_file(&flag_path);
+
+        // create browser script
+        let txt_path = get_temp_path("test_xdf", "txt");
+        let browser_path = get_temp_path("test_xdg", "browser");
+        {
+            let mut browser_file =
+                File::create(&browser_path).expect("failed to create browser file");
+            let _ = browser_file.write_fmt(format_args!(
+                r#"#!/bin/bash
+                if [ "$1" != "p1" ]; then
+                    echo "1st parameter should've been p1" >&2
+                    exit 1
+                elif [ "$2" != "{}" ]; then
+                    echo "2nd parameter should've been {}" >&2
+                    exit 1
+                elif [ "$3" != "p3" ]; then
+                    echo "3rd parameter should've been p3" >&2
+                    exit 1
+                fi
+
+                echo "$2" > "{}"
+            "#,
+                &txt_path, &txt_path, &flag_path
+            ));
+            let mut perms = browser_file
+                .metadata()
+                .expect("failed to get permissions")
+                .permissions();
+            perms.set_mode(0o755);
+            let _ = browser_file.set_permissions(perms);
+        }
+
+        // create xdg desktop config
+        let config_path = get_temp_path("test_xdg", "desktop");
+        {
+            let mut xdg_file =
+                std::fs::File::create(&config_path).expect("failed to create xdg desktop file");
+            let _ = xdg_file.write_fmt(format_args!(
+                r#"# this line should be ignored
+[Desktop Entry]
+Exec={} p1 %u p3
+[Another Entry]
+Exec=/bin/ls
+# the above Exec line should be getting ignored
+            "#,
+                &browser_path
+            ));
+        }
+
+        // now try opening browser using above desktop config
+        let result = open_using_xdg_config(
+            &PathBuf::from(&config_path),
+            &BrowserOptions::default(),
+            &txt_path,
+        );
+
+        // we need to wait until the flag file shows up due to the async
+        // nature of browser invocation
+        for _ in 0..10 {
+            if std::fs::read_to_string(&flag_path).is_ok() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(500));
+        }
+        std::thread::sleep(std::time::Duration::from_millis(500));
+
+        // validate that the flag file contains the url we passed
+        assert_eq!(
+            std::fs::read_to_string(&flag_path)
+                .expect("flag file not found")
+                .trim(),
+            &txt_path,
+        );
+        assert!(result.is_ok());
+
+        // delete all temp files
+        let _ = std::fs::remove_file(&txt_path);
+        let _ = std::fs::remove_file(&flag_path);
+        let _ = std::fs::remove_file(&browser_path);
+        let _ = std::fs::remove_file(&config_path);
+
+        assert!(result.is_ok());
+    }
 }

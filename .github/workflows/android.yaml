@@ -9,12 +9,14 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  RUST_LOG: webbrowser=TRACE
   CARGO_APK_VERSION: '0.8.2'
 
 jobs:
   build:
     name: Build
     runs-on: macos-latest
+    if: ${{ !contains(github.event.head_commit.message, '#build-') || contains(github.event.head_commit.message, '#build-android') }}
     strategy:
       matrix:
         rust: [stable ]

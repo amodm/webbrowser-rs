@@ -9,12 +9,14 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  RUST_LOG: webbrowser=TRACE
   WASM_PACK_VERSION: '0.10.2'
 
 jobs:
   build:
     name: Build
     runs-on: ubuntu-latest
+    if: ${{ !contains(github.event.head_commit.message, '#build-') || contains(github.event.head_commit.message, '#build-wasm') }}
     strategy:
       matrix:
         rust: [stable]
@@ -60,7 +62,8 @@ jobs:
           firefox-version: '97.0'
       - name: Custom headless firefox script
         run: |
-          echo 'nohup firefox --headless "$*" >/dev/null 2>&1 &' > /tmp/hffox
+          echo '#!/bin/sh' > /tmp/hffox
+          echo 'nohup firefox --headless "$*" >/dev/null 2>&1 &' >> /tmp/hffox
           chmod 755 /tmp/hffox
 
       # Run tests

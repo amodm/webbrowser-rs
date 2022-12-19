@@ -23,6 +23,9 @@ pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
 where
     F: FnOnce(&str),
 {
+    // initialize env logger
+    let _ = env_logger::try_init();
+
     // start the server on a random port
     let bind_addr = format!("{}:0", host);
     let (tx, rx) = cbc::bounded(2);
@@ -30,8 +33,10 @@ where
         tx: Arc::new(tx.clone()),
     };
     let http_server = HttpServer::new(move || {
+        let wasm_pkg_dir = "tests/test-wasm-app/pkg";
+        let _ = std::fs::create_dir_all(std::path::Path::new(wasm_pkg_dir));
         App::new()
-            .service(fs::Files::new("/static/wasm", "tests/test-wasm-app/pkg"))
+            .service(fs::Files::new("/static/wasm", wasm_pkg_dir))
             .app_data(web::Data::new(data.clone()))
             .default_service(web::to(log_handler))
     })

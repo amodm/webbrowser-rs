@@ -9,6 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
+  RUST_LOG: webbrowser=TRACE
   WASM_PACK_VERSION: '0.10.2'
 
 jobs:

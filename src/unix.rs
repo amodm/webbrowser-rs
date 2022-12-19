@@ -24,7 +24,6 @@ macro_rules! try_browser {
 /// 2. Attempt to use xdg-open
 /// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
 /// 4. Fallback to x-www-browser
-#[inline]
 pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
     match browser {
         Browser::Default => open_browser_default(url, options),
@@ -39,7 +38,6 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
 ///
 /// [BrowserOptions::dry_run] is handled inside [run_command], as all execution paths eventually
 /// rely on it to execute.
-#[inline]
 fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     // we first try with the $BROWSER env
     try_with_browser_env(url, options)
@@ -80,7 +78,6 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
         .map(|_| ())
 }
 
-#[inline]
 fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
     // $BROWSER can contain ':' delimited options, each representing a potential browser command line
     for browser in std::env::var("BROWSER")
@@ -119,7 +116,6 @@ fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
 }
 
 /// Detect the desktop environment
-#[inline]
 fn guess_desktop_env() -> &'static str {
     let unknown = "unknown";
     let xcd: String = std::env::var("XDG_CURRENT_DESKTOP")
@@ -152,7 +148,6 @@ fn guess_desktop_env() -> &'static str {
 
 /// Handle Haiku explicitly, as it uses an "open" command, similar to macos
 /// but on other Unixes, open ends up translating to shell open fd
-#[inline]
 fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
     if cfg!(target_os = "haiku") {
         try_browser!(options, "open", url).map(|_| ())
@@ -163,7 +158,6 @@ fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
 
 /// Dig into XDG settings (if xdg is available) to force it to open the browser, instead of
 /// the default application
-#[inline]
 fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
     // run: xdg-settings get default-web-browser
     let browser_name_os = for_matching_path("xdg-settings", |pb| {
@@ -304,7 +298,6 @@ fn get_xdg_dirs() -> Vec<PathBuf> {
 }
 
 /// Returns true if specified command refers to a known list of text browsers
-#[inline]
 fn is_text_browser(pb: &Path) -> bool {
     for browser in TEXT_BROWSERS.iter() {
         if pb.ends_with(browser) {
@@ -314,7 +307,6 @@ fn is_text_browser(pb: &Path) -> bool {
     false
 }
 
-#[inline]
 fn for_matching_path<F, T>(name: &str, op: F) -> Result<T>
 where
     F: FnOnce(&PathBuf) -> Result<T>,
@@ -351,7 +343,6 @@ where
 }
 
 /// Run the specified command in foreground/background
-#[inline]
 fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) -> Result<()> {
     // if dry_run, we return a true, as executable existence check has
     // already been done

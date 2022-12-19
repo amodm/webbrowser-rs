@@ -23,6 +23,9 @@ pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
 where
     F: FnOnce(&str),
 {
+    // initialize env logger
+    let _ = env_logger::try_init();
+
     // start the server on a random port
     let bind_addr = format!("{}:0", host);
     let (tx, rx) = cbc::bounded(2);

@@ -1,6 +1,8 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use log::{debug, trace};
+use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
-use std::path::{Path, PathBuf};
+use std::path::{Path, PathBuf, MAIN_SEPARATOR};
 use std::process::{Command, Stdio};
 
 macro_rules! try_browser {
@@ -43,8 +45,8 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     try_with_browser_env(url, options)
         // allow for haiku's open specifically
         .or_else(|_| try_haiku(options, url))
-        // then we try with xdg-open
-        .or_else(|_| try_browser!(options, "xdg-open", url))
+        // then we try with xdg configuration
+        .or_else(|_| try_xdg(options, url))
         // else do desktop specific stuff
         .or_else(|r| match guess_desktop_env() {
             "kde" => try_browser!(options, "kde-open", url)
@@ -167,8 +169,8 @@ fn guess_desktop_env() -> &'static str {
     }
 }
 
-// Handle Haiku explicitly, as it uses an "open" command, similar to macos
-// but on other Unixes, open ends up translating to shell open fd
+/// Handle Haiku explicitly, as it uses an "open" command, similar to macos
+/// but on other Unixes, open ends up translating to shell open fd
 #[inline]
 fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
     if cfg!(target_os = "haiku") {
@@ -176,6 +178,148 @@ fn try_haiku(options: &BrowserOptions, url: &str) -> Result<()> {
     } else {
         Err(Error::new(ErrorKind::NotFound, "Not on haiku"))
     }
+}
+
+/// Dig into XDG settings (if xdg is available) to force it to open the browser, instead of
+/// the default application
+#[inline]
+fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
+    // run: xdg-settings get default-web-browser
+    let browser_name_os = for_matching_path("xdg-settings", |pb| {
+        Command::new(pb)
+            .args(["get", "default-web-browser"])
+            .stdin(Stdio::null())
+            .stderr(Stdio::null())
+            .output()
+    })
+    .map_err(|_| Error::new(ErrorKind::NotFound, "unable to determine xdg browser"))?
+    .stdout;
+
+    // convert browser name to a utf-8 string and trim off the trailing newline
+    let browser_name = String::from_utf8(browser_name_os)
+        .map_err(|_| Error::new(ErrorKind::NotFound, "invalid default browser name"))?
+        .trim()
+        .to_owned();
+    trace!("found xdg browser: {:?}", &browser_name);
+
+    // search for the config file corresponding to this browser name
+    let mut config_found = false;
+    let app_suffix = "applications";
+    for xdg_dir in get_xdg_dirs().iter_mut() {
+        let mut config_path = xdg_dir.join(app_suffix).join(&browser_name);
+        trace!("checking for xdg config at {:?}", config_path);
+        let mut metadata = config_path.metadata();
+        if metadata.is_err() && browser_name.contains('-') {
+            // as per the spec, we need to replace '-' with /
+            let child_path = browser_name.replace('-', "/");
+            config_path = xdg_dir.join(app_suffix).join(child_path);
+            metadata = config_path.metadata();
+        }
+        if metadata.is_ok() {
+            // we've found the config file, so we try running using that
+            config_found = true;
+            match open_using_xdg_config(&config_path, options, url) {
+                Ok(x) => return Ok(x), // return if successful
+                Err(err) => {
+                    // if we got an error other than NotFound, then we short
+                    // circuit, and do not try any more options, else we
+                    // continue to try more
+                    if err.kind() != ErrorKind::NotFound {
+                        return Err(err);
+                    }
+                }
+            }
+        }
+    }
+
+    if config_found {
+        Err(Error::new(ErrorKind::Other, "xdg-open failed"))
+    } else {
+        Err(Error::new(ErrorKind::NotFound, "no valid xdg config found"))
+    }
+}
+
+/// Opens `url` using xdg configuration found in `config_path`
+///
+/// See https://specifications.freedesktop.org/desktop-entry-spec/latest for details
+fn open_using_xdg_config(config_path: &PathBuf, options: &BrowserOptions, url: &str) -> Result<()> {
+    let file = std::fs::File::open(config_path)?;
+    let mut in_desktop_entry = false;
+    let mut hidden = false;
+    let mut cmdline: Option<String> = None;
+    let mut requires_terminal = false;
+
+    // we capture important keys under the [Desktop Entry] section, as defined under:
+    // https://specifications.freedesktop.org/desktop-entry-spec/latest/ar01s06.html
+    for line in BufReader::new(file).lines().flatten() {
+        if line == "[Desktop Entry]" {
+            in_desktop_entry = true;
+        } else if line.starts_with('[') {
+            in_desktop_entry = false;
+        } else if in_desktop_entry && !line.starts_with('#') {
+            if let Some(idx) = line.find('=') {
+                let key = &line[..idx];
+                let value = &line[idx + 1..];
+                match key {
+                    "Exec" => cmdline = Some(value.to_owned()),
+                    "Hidden" => hidden = value == "true",
+                    "Terminal" => requires_terminal = value == "true",
+                    _ => (), // ignore
+                }
+            }
+        }
+    }
+
+    if hidden {
+        // we ignore this config if it was marked hidden/deleted
+        return Err(Error::new(ErrorKind::NotFound, "xdg config is hidden"));
+    }
+
+    if let Some(cmdline) = cmdline {
+        // we have a valid configuration
+        let cmdarr: Vec<&str> = cmdline.split_ascii_whitespace().collect();
+        let browser_cmd = cmdarr[0];
+        for_matching_path(browser_cmd, |pb| {
+            let mut cmd = Command::new(pb);
+            let mut url_added = false;
+            for arg in cmdarr.iter().skip(1) {
+                match *arg {
+                    "%u" | "%U" | "%f" | "%F" => {
+                        url_added = true;
+                        cmd.arg(url)
+                    }
+                    _ => cmd.arg(arg),
+                };
+            }
+            if !url_added {
+                // append the url as an argument only if it was not already set
+                cmd.arg(url);
+            }
+            run_command(&mut cmd, !requires_terminal, options)
+        })
+    } else {
+        // we don't have a valid config
+        Err(Error::new(ErrorKind::NotFound, "not a valid xdg config"))
+    }
+}
+
+/// Get the list of directories in which the desktop file needs to be searched
+fn get_xdg_dirs() -> Vec<PathBuf> {
+    let mut xdg_dirs: Vec<PathBuf> = Vec::new();
+
+    if let Some(user_dir) = dirs::data_dir() {
+        xdg_dirs.push(user_dir);
+    }
+    if let Ok(data_dirs) = std::env::var("XDG_DATA_DIRS") {
+        for d in data_dirs.split(':') {
+            xdg_dirs.push(PathBuf::from(d));
+        }
+    } else {
+        xdg_dirs.push(PathBuf::from("/usr/local/share"));
+        xdg_dirs.push(PathBuf::from("/usr/share"));
+    }
+
+    xdg_dirs
 }
 
 /// Returns true if specified command refers to a known list of text browsers
@@ -190,15 +334,15 @@ fn is_text_browser(pb: &Path) -> bool {
 }
 
 #[inline]
-fn for_matching_path<F>(name: &str, op: F) -> Result<()>
+fn for_matching_path<F, T>(name: &str, op: F) -> Result<T>
 where
-    F: FnOnce(&PathBuf) -> Result<()>,
+    F: FnOnce(&PathBuf) -> Result<T>,
 {
     let err = Err(Error::new(ErrorKind::NotFound, "command not found"));
 
     // if the name already includes path separator, we should not try to do a PATH search on it
     // as it's likely an absolutely or relative name, so we treat it as such.
-    if name.contains(std::path::MAIN_SEPARATOR) {
+    if name.contains(MAIN_SEPARATOR) {
         let pb = std::path::PathBuf::from(name);
         if let Ok(metadata) = pb.metadata() {
             if metadata.is_file() && metadata.permissions().mode() & 0o111 != 0 {
@@ -231,10 +375,12 @@ fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) ->
     // if dry_run, we return a true, as executable existence check has
     // already been done
     if options.dry_run {
+        debug!("dry-run enabled, so not running: {:?}", &cmd);
         return Ok(());
     }
 
     if background {
+        debug!("background spawn: {:?}", &cmd);
         // if we're in background, set stdin/stdout to null and spawn a child, as we're
         // not supposed to have any interaction.
         if options.suppress_output {
@@ -247,6 +393,7 @@ fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) ->
         .spawn()
         .map(|_| ())
     } else {
+        debug!("foreground exec: {:?}", &cmd);
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
         // till completion.
         // We also specifically don't suppress anything here, because we're running here
@@ -267,3 +414,8 @@ fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) ->
 static TEXT_BROWSERS: [&str; 9] = [
     "lynx", "links", "links2", "elinks", "w3m", "eww", "netrik", "retawq", "curl",
 ];
+
+#[cfg(test)]
+pub mod tests_xdg {
+    pub use super::*;
+}

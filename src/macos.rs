@@ -1,21 +1,20 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use std::process::{Command, Stdio};
 
 mod common;
 use common::from_status;
 
 /// Deal with opening of browsers on Mac OS X, using `open` command
-#[inline]
-pub fn open_browser_internal(
+pub(super) fn open_browser_internal(
     browser: Browser,
-    url_raw: &str,
+    target: &TargetType,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let url_s: String = match url::Url::parse(url_raw) {
-        Ok(u) => u.as_str().into(),
-        Err(_) => url_raw.into(),
+    let url = match target {
+        TargetType::Url(u) => u.as_str(),
+        TargetType::Path(s) => s.as_str(),
     };
-    let url = &url_s;
+
     let mut cmd = Command::new("open");
     match browser {
         Browser::Default => {

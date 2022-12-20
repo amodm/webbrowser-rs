@@ -1,4 +1,4 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use log::{debug, trace};
 use std::io::{BufRead, BufReader};
 use std::os::unix::fs::PermissionsExt;
@@ -24,7 +24,16 @@ macro_rules! try_browser {
 /// 2. Attempt to use xdg-open
 /// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc. incl. WSL
 /// 4. Fallback to x-www-browser
-pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+pub(super) fn open_browser_internal(
+    browser: Browser,
+    target: &TargetType,
+    options: &BrowserOptions,
+) -> Result<()> {
+    let url = match target {
+        TargetType::Url(u) => u.as_str(),
+        TargetType::Path(s) => s.as_str(),
+    };
+
     match browser {
         Browser::Default => open_browser_default(url, options),
         _ => Err(Error::new(

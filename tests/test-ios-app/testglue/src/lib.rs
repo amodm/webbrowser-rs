@@ -1,6 +1,5 @@
-use std::os::raw::{c_char};
 use std::ffi::CStr;
-use webbrowser;
+use std::os::raw::c_char;
 
 #[no_mangle]
 pub extern fn test_open_webbrowser(url_c_chars: *const c_char) {

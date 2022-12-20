@@ -280,11 +280,32 @@ pub fn open_browser_with_options(
     url: &str,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let url_s: String = match url::Url::parse(url) {
-        Ok(u) => u.as_str().into(),
-        Err(_) => url.into(),
+    let target = match url::Url::parse(url) {
+        Ok(u) => TargetType::Url(u),
+        Err(_) => TargetType::Path(url.into()),
     };
-    os::open_browser_internal(browser, &url_s, options)
+    os::open_browser_internal(browser, &target, options)
+}
+
+/// Enum type to distinguish different kinds of targets. If we're able to parse
+/// the target as a URL, then great, else we treat it as a path.
+enum TargetType {
+    Url(url::Url),
+    Path(String),
+}
+
+/// If `target` represents a valid http/https url, return the str corresponding to it
+/// else return `std::io::Error` of kind `std::io::ErrorKind::InvalidInput`
+#[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
+#[inline]
+pub(crate) fn get_http_url(target: &TargetType) -> Result<&str> {
+    match target {
+        TargetType::Url(u) => match u.scheme() {
+            "http" | "https" => Ok(u.as_str()),
+            _ => Err(Error::new(ErrorKind::InvalidInput, "not a valid url")),
+        },
+        _ => Err(Error::new(ErrorKind::InvalidInput, "not a valid url")),
+    }
 }
 
 #[test]

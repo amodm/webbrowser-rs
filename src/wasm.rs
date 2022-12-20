@@ -1,9 +1,15 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 
 /// Deal with opening a URL in wasm32. This implementation ignores the browser attribute
 /// and always opens URLs in the same browser where wasm32 vm is running.
-#[inline]
-pub fn open_browser_internal(_: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+pub(super) fn open_browser_internal(
+    _: Browser,
+    target: &TargetType,
+    options: &BrowserOptions,
+) -> Result<()> {
+    // ensure we're opening only http/https urls, failing otherwise
+    let url = crate::get_http_url(target)?;
+
     // always return true for a dry run
     if options.dry_run {
         return Ok(());

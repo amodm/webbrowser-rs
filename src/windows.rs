@@ -1,25 +1,33 @@
 extern crate widestring;
 extern crate winapi;
 
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 pub use std::os::windows::process::ExitStatusExt;
 use std::{mem, ptr};
 use widestring::U16CString;
+use winapi::shared::winerror::SUCCEEDED;
+use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
+use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
+use winapi::um::shellapi::{
+    ShellExecuteExW, SEE_MASK_CLASSNAME, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+};
+use winapi::um::winuser::SW_SHOWNORMAL;
 
 /// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
 /// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
 /// function.
 ///
 /// We ignore BrowserOptions on Windows, except for honouring [BrowserOptions::dry_run]
-#[inline]
-pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
-    use winapi::shared::winerror::SUCCEEDED;
-    use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
-    use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
-    use winapi::um::shellapi::{
-        ShellExecuteExW, SEE_MASK_CLASSNAME, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
+pub(super) fn open_browser_internal(
+    browser: Browser,
+    target: &TargetType,
+    options: &BrowserOptions,
+) -> Result<()> {
+    let url = match target {
+        TargetType::Url(u) => u.as_str(),
+        TargetType::Path(s) => s.as_str(),
     };
-    use winapi::um::winuser::SW_SHOWNORMAL;
+
     match browser {
         Browser::Default => {
             // always return true for a dry run for default browser

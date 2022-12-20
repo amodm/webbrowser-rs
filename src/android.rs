@@ -1,11 +1,17 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result};
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use jni::objects::JValue;
 use std::process::{Command, Stdio};
 
 /// Deal with opening of browsers on Android. Only [Browser::Default] is supported, and
 /// in options, only [BrowserOptions::dry_run] is honoured.
-#[inline]
-pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptions) -> Result<()> {
+pub(super) fn open_browser_internal(
+    browser: Browser,
+    target: &TargetType,
+    options: &BrowserOptions,
+) -> Result<()> {
+    // ensure we're opening only http/https urls, failing otherwise
+    let url = crate::get_http_url(target)?;
+
     match browser {
         Browser::Default => open_browser_default(url, options),
         _ => Err(Error::new(
@@ -16,7 +22,6 @@ pub fn open_browser_internal(browser: Browser, url: &str, options: &BrowserOptio
 }
 
 /// Open the default browser
-#[inline]
 fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     // always return true for a dry run
     if options.dry_run {
@@ -96,7 +101,6 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
 /// Attemps to open a browser assuming a termux environment
 ///
 /// See [issue #53](https://github.com/amodm/webbrowser-rs/issues/53)
-#[inline]
 fn try_for_termux(url: &str, options: &BrowserOptions) -> Result<()> {
     use std::env;
     if env::var("TERMUX_VERSION").is_ok() {

@@ -10,7 +10,7 @@ pub(super) fn open_browser_internal(
     options: &BrowserOptions,
 ) -> Result<()> {
     // ensure we're opening only http/https urls, failing otherwise
-    let url = crate::get_http_url(target)?;
+    let url = target.get_http_url()?;
 
     match browser {
         Browser::Default => open_browser_default(url, options),

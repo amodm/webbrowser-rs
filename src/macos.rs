@@ -10,11 +10,7 @@ pub(super) fn open_browser_internal(
     target: &TargetType,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let url = match target {
-        TargetType::Url(u) => u.as_str(),
-        TargetType::Path(s) => s.as_str(),
-    };
-
+    let url = target.as_ref();
     let mut cmd = Command::new("open");
     match browser {
         Browser::Default => {

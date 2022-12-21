@@ -23,11 +23,6 @@ pub(super) fn open_browser_internal(
     target: &TargetType,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let url = match target {
-        TargetType::Url(u) => u.as_str(),
-        TargetType::Path(s) => s.as_str(),
-    };
-
     match browser {
         Browser::Default => {
             // always return true for a dry run for default browser
@@ -37,8 +32,8 @@ pub(super) fn open_browser_internal(
 
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
             static HTTP: &[u16] = &['h' as u16, 't' as u16, 't' as u16, 'p' as u16, 0x0000];
-            let url =
-                U16CString::from_str(url).map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
+            let url = U16CString::from_str(target.as_ref())
+                .map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
             let code = unsafe {
                 let coinitializeex_result = CoInitializeEx(
                     ptr::null_mut(),

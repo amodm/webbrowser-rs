@@ -294,17 +294,37 @@ enum TargetType {
     Path(String),
 }
 
-/// If `target` represents a valid http/https url, return the str corresponding to it
-/// else return `std::io::Error` of kind `std::io::ErrorKind::InvalidInput`
-#[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
-#[inline]
-pub(crate) fn get_http_url(target: &TargetType) -> Result<&str> {
-    match target {
-        TargetType::Url(u) => match u.scheme() {
-            "http" | "https" => Ok(u.as_str()),
-            _ => Err(Error::new(ErrorKind::InvalidInput, "not a valid url")),
-        },
-        _ => Err(Error::new(ErrorKind::InvalidInput, "not a valid url")),
+impl TargetType {
+    /// Returns true if this target represents an HTTP url, false otherwise
+    #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
+    fn is_http(&self) -> bool {
+        match self {
+            Self::Url(u) => match u.scheme() {
+                "http" | "https" => true,
+                _ => false,
+            },
+            _ => false,
+        }
+    }
+
+    /// If `target` represents a valid http/https url, return the str corresponding to it
+    /// else return `std::io::Error` of kind `std::io::ErrorKind::InvalidInput`
+    #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
+    fn get_http_url(&self) -> Result<&str> {
+        if self.is_http() {
+            Ok(self.as_ref())
+        } else {
+            Err(Error::new(ErrorKind::InvalidInput, "not a valid url"))
+        }
+    }
+}
+
+impl AsRef<str> for TargetType {
+    fn as_ref(&self) -> &str {
+        match self {
+            TargetType::Url(u) => u.as_str(),
+            TargetType::Path(p) => p,
+        }
     }
 }
 

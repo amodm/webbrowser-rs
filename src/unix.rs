@@ -29,13 +29,8 @@ pub(super) fn open_browser_internal(
     target: &TargetType,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let url = match target {
-        TargetType::Url(u) => u.as_str(),
-        TargetType::Path(s) => s.as_str(),
-    };
-
     match browser {
-        Browser::Default => open_browser_default(url, options),
+        Browser::Default => open_browser_default(target.as_ref(), options),
         _ => Err(Error::new(
             ErrorKind::NotFound,
             "only default browser supported",

@@ -280,10 +280,7 @@ pub fn open_browser_with_options(
     url: &str,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let target = match url::Url::parse(url) {
-        Ok(u) => TargetType::Url(u),
-        Err(_) => TargetType::Path(url.into()),
-    };
+    let target = TargetType::from(url);
     os::open_browser_internal(browser, &target, options)
 }
 
@@ -324,6 +321,15 @@ impl AsRef<str> for TargetType {
         match self {
             TargetType::Url(u) => u.as_str(),
             TargetType::Path(p) => p,
+        }
+    }
+}
+
+impl From<&str> for TargetType {
+    fn from(target: &str) -> Self {
+        match url::Url::parse(target) {
+            Ok(u) => TargetType::Url(u),
+            Err(_) => TargetType::Path(target.into()),
         }
     }
 }

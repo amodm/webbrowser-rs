@@ -339,18 +339,22 @@ impl TryFrom<&str> for TargetType {
         match url::Url::parse(value) {
             Ok(u) => Ok(Self(u)),
             Err(_) => {
-                // assume it to be a path if url parsing failed
-                let pb = PathBuf::from(value);
-                let url = url::Url::from_file_path(if pb.is_relative() {
-                    std::env::current_dir()?.join(pb)
+                if cfg!(target_family = "wasm") {
+                    Err(Error::new(ErrorKind::InvalidInput, "invalid url for wasm"))
                 } else {
-                    pb
-                })
-                .map_err(|_| {
-                    Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
-                })?;
+                    // assume it to be a path if url parsing failed
+                    let pb = PathBuf::from(value);
+                    let url = url::Url::from_file_path(if pb.is_relative() {
+                        std::env::current_dir()?.join(pb)
+                    } else {
+                        pb
+                    })
+                    .map_err(|_| {
+                        Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
+                    })?;
 
-                Ok(Self(url))
+                    Ok(Self(url))
+                }
             }
         }
     }

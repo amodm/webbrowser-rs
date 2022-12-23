@@ -17,7 +17,7 @@ jobs:
         rust: [stable]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout
       - uses: actions-rs/toolchain@v1
         name: Install Rust Toolchain

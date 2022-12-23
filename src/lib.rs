@@ -20,14 +20,18 @@
 //! | windows  | ✅        | default only | ✅ |
 //! | linux/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 //! | android  | ✅        | default only | ✅ |
+//! | ios      | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
 //! | haiku    | ✅ (experimental) | default only | ❌ |
-//! | ios      | ✅        | default only | ✅ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
+//! * **Browser guarantee** - alternative libraries rely on underlying system commands, which leads to a behaviour that if you open a local html
+//! file, sometimes it may open in an editor instead of the browser, because of the local file association being respected by that command.
+//! This library guarantees that it's a browser that is opened (as determined by `http` scheme association, not local file association).
 //! * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
-//! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be overridden by `webbrowser::open_browser_with_options`.
+//! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be
+//! overridden by `webbrowser::open_browser_with_options`.
 
 #[cfg_attr(target_os = "ios", path = "ios.rs")]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
@@ -62,8 +66,12 @@ compile_error!(
     "Only Windows, Mac OS, iOS, Linux, *BSD and Haiku and Wasm32 are currently supported"
 );
 
+use std::convert::TryFrom;
 use std::default::Default;
+use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
+use std::ops::Deref;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::{error, fmt};
 
@@ -280,26 +288,20 @@ pub fn open_browser_with_options(
     url: &str,
     options: &BrowserOptions,
 ) -> Result<()> {
-    let target = TargetType::from(url);
+    let target = TargetType::try_from(url)?;
     os::open_browser_internal(browser, &target, options)
 }
 
-/// Enum type to distinguish different kinds of targets. If we're able to parse
-/// the target as a URL, then great, else we treat it as a path.
-enum TargetType {
-    Url(url::Url),
-    Path(String),
-}
+/// The link we're trying to open, represented as a URL. Local files get represented
+/// via `file://...` URLs
+struct TargetType(url::Url);
 
 impl TargetType {
     /// Returns true if this target represents an HTTP url, false otherwise
     #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
     fn is_http(&self) -> bool {
-        match self {
-            Self::Url(u) => match u.scheme() {
-                "http" | "https" => true,
-                _ => false,
-            },
+        match self.0.scheme() {
+            "http" | "https" => true,
             _ => false,
         }
     }
@@ -309,27 +311,47 @@ impl TargetType {
     #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
     fn get_http_url(&self) -> Result<&str> {
         if self.is_http() {
-            Ok(self.as_ref())
+            Ok(self.0.as_str())
         } else {
-            Err(Error::new(ErrorKind::InvalidInput, "not a valid url"))
+            Err(Error::new(ErrorKind::InvalidInput, "not an http url"))
         }
     }
 }
 
-impl AsRef<str> for TargetType {
-    fn as_ref(&self) -> &str {
-        match self {
-            TargetType::Url(u) => u.as_str(),
-            TargetType::Path(p) => p,
-        }
+impl Deref for TargetType {
+    type Target = str;
+
+    fn deref(&self) -> &Self::Target {
+        self.0.as_str()
     }
 }
 
-impl From<&str> for TargetType {
-    fn from(target: &str) -> Self {
-        match url::Url::parse(target) {
-            Ok(u) => TargetType::Url(u),
-            Err(_) => TargetType::Path(target.into()),
+impl Display for TargetType {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        (self as &str).fmt(f)
+    }
+}
+
+impl TryFrom<&str> for TargetType {
+    type Error = Error;
+
+    fn try_from(value: &str) -> Result<Self> {
+        match url::Url::parse(value) {
+            Ok(u) => Ok(Self(u)),
+            Err(_) => {
+                // assume it to be a path if url parsing failed
+                let pb = PathBuf::from(value);
+                let url = url::Url::from_file_path(if pb.is_relative() {
+                    std::env::current_dir()?.join(pb)
+                } else {
+                    pb
+                })
+                .map_err(|_| {
+                    Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
+                })?;
+
+                Ok(Self(url))
+            }
         }
     }
 }

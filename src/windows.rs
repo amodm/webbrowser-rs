@@ -32,7 +32,7 @@ pub(super) fn open_browser_internal(
 
             static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
             static HTTP: &[u16] = &['h' as u16, 't' as u16, 't' as u16, 'p' as u16, 0x0000];
-            let url = U16CString::from_str(target.as_ref())
+            let url = U16CString::from_str(&target)
                 .map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
             let code = unsafe {
                 let coinitializeex_result = CoInitializeEx(

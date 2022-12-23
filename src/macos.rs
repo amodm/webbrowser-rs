@@ -82,11 +82,7 @@ pub(super) fn open_browser_internal(
     }
 
     // launch the browser
-    log::trace!(
-        "about to start browser: {} for {}",
-        &browser,
-        target.as_ref()
-    );
+    log::trace!("about to start browser: {} for {}", &browser, &target);
     let mut launched_app: CFURLRef = std::ptr::null_mut();
     let status = unsafe { LSOpenFromURLSpec(&spec, &mut launched_app) };
     log::trace!("received status: {}", status);
@@ -208,13 +204,14 @@ const DEFAULT_BROWSER_URL: &str = "file:///Applications/Safari.app/";
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::convert::TryFrom;
 
     #[test]
     fn open_non_existing_browser() {
         let _ = env_logger::try_init();
         if let Err(err) = open_browser_internal(
             Browser::Opera,
-            &TargetType::from("https://github.com"),
+            &TargetType::try_from("https://github.com").expect("failed to parse url"),
             &BrowserOptions::default(),
         ) {
             assert_eq!(err.kind(), ErrorKind::NotFound);

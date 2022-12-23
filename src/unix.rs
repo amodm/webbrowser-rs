@@ -30,7 +30,7 @@ pub(super) fn open_browser_internal(
     options: &BrowserOptions,
 ) -> Result<()> {
     match browser {
-        Browser::Default => open_browser_default(&target, options),
+        Browser::Default => open_browser_default(target, options),
         _ => Err(Error::new(
             ErrorKind::NotFound,
             "only default browser supported",

@@ -1,7 +1,8 @@
 use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use crossbeam_channel as cbc;
-use std::sync::Arc;
+use rand::RngCore;
+use std::{io::Write, path::PathBuf, sync::Arc};
 use urlencoding::decode;
 use webbrowser::{open_browser, Browser};
 
@@ -14,9 +15,16 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     if data.tx.send(req.uri().to_string()).is_err() {
         panic!("channel send failed");
     }
-    HttpResponse::Ok()
-        .content_type("text/html; charset=utf-8")
-        .body(format!("<html><body><p>URI: {}</p><script type=\"text/javascript>window.close();</script></body></html>", req.uri()))
+    let uri = req.uri();
+    if uri.path() == URI_PNG_1PX {
+        HttpResponse::Ok()
+            .content_type("image/png")
+            .body(PNG_1PX.to_vec())
+    } else {
+        HttpResponse::Ok()
+            .content_type("text/html; charset=utf-8")
+            .body(format!("<html><body><p>URI: {}</p><script type=\"text/javascript>window.close();</script></body></html>", req.uri()))
+    }
 }
 
 pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
@@ -79,7 +87,46 @@ pub async fn check_request_received(browser: Browser, uri: String) {
 }
 
 #[allow(dead_code)]
+pub async fn check_local_file<F>(browser: Browser, html_dir: Option<PathBuf>, url_op: F)
+where
+    F: FnOnce(&PathBuf) -> String,
+{
+    let cwd = std::env::current_dir().expect("unable to determine current dir");
+    let tmpdir = cwd.join("target").join("tmp");
+    let html_dir = html_dir.unwrap_or(tmpdir);
+    let id = rand::thread_rng().next_u32();
+    let pb = html_dir.join(format!("test.{}.html", id));
+    let img_uri = format!("{}?r={}", URI_PNG_1PX, id);
+    check_request_received_using(img_uri, "127.0.0.1", |uri| {
+        let url = url_op(&pb);
+        let mut html_file = std::fs::File::create(&pb).expect("failed to create html file");
+        html_file
+            .write_fmt(format_args!(
+                "<p>html file: {}</p><p>url: {}</p>img: <img src=\"{}\"/>",
+                &pb.as_os_str().to_string_lossy(),
+                url,
+                uri
+            ))
+            .expect("failed to write html file");
+        drop(html_file);
+        open_browser(browser, &url).expect("failed to open browser");
+    })
+    .await;
+    let _ = std::fs::remove_file(&pb);
+}
+
+#[allow(dead_code)]
 pub async fn check_browser(browser: Browser, platform: &str) {
     check_request_received(browser, format!("/{}", platform)).await;
     check_request_received(browser, format!("/{}/😀😀😀", platform)).await;
 }
+
+const URI_PNG_1PX: &str = "/img/1px.png";
+
+// generated from https://shoonia.github.io/1x1/#ff4563ff
+const PNG_1PX: [u8; 82] = [
+    137, 80, 78, 71, 13, 10, 26, 10, 0, 0, 0, 13, 73, 72, 68, 82, 0, 0, 0, 1, 0, 0, 0, 1, 8, 2, 0,
+    0, 0, 144, 119, 83, 222, 0, 0, 0, 1, 115, 82, 71, 66, 0, 174, 206, 28, 233, 0, 0, 0, 12, 73,
+    68, 65, 84, 24, 87, 99, 248, 239, 154, 12, 0, 3, 238, 1, 168, 16, 134, 253, 64, 0, 0, 0, 0, 73,
+    69, 78, 68, 174, 66, 96, 130,
+];

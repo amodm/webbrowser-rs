@@ -71,7 +71,6 @@ use std::default::Default;
 use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
 use std::ops::Deref;
-use std::path::PathBuf;
 use std::str::FromStr;
 use std::{error, fmt};
 
@@ -335,26 +334,28 @@ impl Display for TargetType {
 impl TryFrom<&str> for TargetType {
     type Error = Error;
 
+    #[cfg(target_family = "wasm")]
+    fn try_from(_: &str) -> Result<Self> {
+        Err(Error::new(ErrorKind::InvalidInput, "invalid url for wasm"))
+    }
+
+    #[cfg(not(target_family = "wasm"))]
     fn try_from(value: &str) -> Result<Self> {
         match url::Url::parse(value) {
             Ok(u) => Ok(Self(u)),
             Err(_) => {
-                if cfg!(target_family = "wasm") {
-                    Err(Error::new(ErrorKind::InvalidInput, "invalid url for wasm"))
+                // assume it to be a path if url parsing failed
+                let pb = std::path::PathBuf::from(value);
+                let url = url::Url::from_file_path(if pb.is_relative() {
+                    std::env::current_dir()?.join(pb)
                 } else {
-                    // assume it to be a path if url parsing failed
-                    let pb = PathBuf::from(value);
-                    let url = url::Url::from_file_path(if pb.is_relative() {
-                        std::env::current_dir()?.join(pb)
-                    } else {
-                        pb
-                    })
-                    .map_err(|_| {
-                        Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
-                    })?;
+                    pb
+                })
+                .map_err(|_| {
+                    Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
+                })?;
 
-                    Ok(Self(url))
-                }
+                Ok(Self(url))
             }
         }
     }

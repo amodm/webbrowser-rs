@@ -5,7 +5,7 @@ mod common;
 mod tests {
     const TEST_PLATFORM: &str = "macos";
 
-    use super::common::check_browser;
+    use super::common::{check_browser, check_local_file};
     use webbrowser::Browser;
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -46,5 +46,36 @@ mod tests {
             !Browser::WebPositive.exists(),
             "should not have found WebPositive",
         );
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_local_file_abs_path() {
+        check_local_file(Browser::Default, None, |pb| {
+            pb.as_os_str().to_string_lossy().into()
+        })
+        .await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_local_file_rel_path() {
+        let cwd = std::env::current_dir().expect("unable to get current dir");
+        check_local_file(Browser::Default, None, |pb| {
+            pb.strip_prefix(cwd)
+                .expect("strip prefix failed")
+                .as_os_str()
+                .to_string_lossy()
+                .into()
+        })
+        .await;
+    }
+
+    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    async fn test_local_file_uri() {
+        check_local_file(Browser::Default, None, |pb| {
+            url::Url::from_file_path(pb)
+                .expect("failed to convert path to url")
+                .to_string()
+        })
+        .await;
     }
 }

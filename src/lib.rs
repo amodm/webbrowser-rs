@@ -335,8 +335,10 @@ impl TryFrom<&str> for TargetType {
     type Error = Error;
 
     #[cfg(target_family = "wasm")]
-    fn try_from(_: &str) -> Result<Self> {
-        Err(Error::new(ErrorKind::InvalidInput, "invalid url for wasm"))
+    fn try_from(value: &str) -> Result<Self> {
+        url::Url::parse(value)
+            .map(|u| Ok(Self(u)))
+            .map_err(|_| Error::new(ErrorKind::InvalidInput, "invalid url for wasm"))?
     }
 
     #[cfg(not(target_family = "wasm"))]

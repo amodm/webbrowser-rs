@@ -25,7 +25,7 @@ jobs:
         cmake-version: [ '3.18.1' ]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout
       - uses: actions-rs/toolchain@v1
         name: Install Rust Toolchain
@@ -37,7 +37,7 @@ jobs:
           components: rustfmt, clippy
 
       # Install cargo-apk
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Fetch cargo-apk from cache
         id: cargo-apk-cache
         with:
@@ -59,7 +59,7 @@ jobs:
 
       # Check if AVD is in cache, else create AVD
       - name: AVD cache
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         id: avd-cache
         with:
           path: |

@@ -22,7 +22,7 @@ jobs:
         rust: [stable]
     continue-on-error: ${{ matrix.rust != 'stable' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         name: Checkout
       - uses: actions-rs/toolchain@v1
         name: Install Rust Toolchain
@@ -34,7 +34,7 @@ jobs:
           target: wasm32-unknown-unknown
 
       # Install wasm-pack
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         name: Fetch wasm-pack from cache
         id: wasm-pack-cache
         with:

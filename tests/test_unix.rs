@@ -6,9 +6,11 @@ mod tests {
     const TEST_PLATFORM: &str = "unix";
 
     use super::common::{check_browser, check_local_file};
+    use serial_test::serial;
     use webbrowser::Browser;
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[serial]
     async fn test_open_default() {
         check_browser(Browser::Default, TEST_PLATFORM).await;
     }
@@ -24,6 +26,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[serial]
     async fn test_local_file_abs_path() {
         check_local_file(Browser::Default, None, |pb| {
             pb.as_os_str().to_string_lossy().into()
@@ -32,6 +35,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[serial]
     async fn test_local_file_rel_path() {
         let cwd = std::env::current_dir().expect("unable to get current dir");
         check_local_file(Browser::Default, None, |pb| {
@@ -45,6 +49,7 @@ mod tests {
     }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    #[serial]
     async fn test_local_file_uri() {
         check_local_file(Browser::Default, None, |pb| {
             url::Url::from_file_path(pb)

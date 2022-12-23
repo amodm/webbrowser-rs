@@ -37,8 +37,6 @@ jobs:
           command: build
       - uses: actions-rs/cargo@v1
         name: Run Tests
-        env:
-          BROWSER: curl
         with:
           command: test
           args: --all --locked --verbose

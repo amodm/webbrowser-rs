@@ -51,6 +51,11 @@ This library guarantees that it's a browser that is opened (as determined by `ht
 * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be
 overridden by `webbrowser::open_browser_with_options`.
 
+## Crate Features
+`webbrowser` optionally allows the following features to be configured:
+* `hardened` - this disables handling of non-http(s) urls (e.g. `file:///`) as a hard security precaution
+* `wasm-console` - this enables logging to wasm console (valid only on wasm platform)
+
 ## Looking to contribute?
 
 PRs invited for

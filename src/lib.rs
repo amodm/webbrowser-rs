@@ -32,6 +32,11 @@
 //! * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
 //! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be
 //! overridden by `webbrowser::open_browser_with_options`.
+//!
+//! ## Crate Features
+//! `webbrowser` optionally allows the following features to be configured:
+//! * `hardened` - this disables handling of non-http(s) urls (e.g. `file:///`) as a hard security precaution
+//! * `wasm-console` - this enables logging to wasm console (valid only on wasm platform)
 
 #[cfg_attr(target_os = "ios", path = "ios.rs")]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
@@ -231,8 +236,12 @@ impl BrowserOptions {
 
 /// Opens the URL on the default browser of this platform
 ///
-/// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned only if
-/// there was an error in running the command, or if the browser was not found.
+/// Returns Ok(..) so long as the browser invocation was successful. An Err(..) is returned in the
+/// following scenarios:
+/// * The requested browser was not found
+/// * There was an error in opening the browser
+/// * `hardened` feature is enabled, and the URL was not a valid http(s) url, say a `file:///`
+/// * On ios/android/wasm, if the url is not a valid http(s) url
 ///
 /// Equivalent to:
 /// ```no_run
@@ -288,6 +297,16 @@ pub fn open_browser_with_options(
     options: &BrowserOptions,
 ) -> Result<()> {
     let target = TargetType::try_from(url)?;
+
+    // if feature:hardened is enabled, make sure we accept only HTTP(S) URLs
+    #[cfg(feature = "hardened")]
+    if !target.is_http() {
+        return Err(Error::new(
+            ErrorKind::InvalidInput,
+            "only http/https urls allowed",
+        ));
+    }
+
     os::open_browser_internal(browser, &target, options)
 }
 
@@ -297,7 +316,12 @@ struct TargetType(url::Url);
 
 impl TargetType {
     /// Returns true if this target represents an HTTP url, false otherwise
-    #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
+    #[cfg(any(
+        feature = "hardened",
+        target_os = "android",
+        target_os = "ios",
+        target_family = "wasm"
+    ))]
     fn is_http(&self) -> bool {
         match self.0.scheme() {
             "http" | "https" => true,

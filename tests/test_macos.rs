@@ -5,7 +5,7 @@ mod common;
 mod tests {
     const TEST_PLATFORM: &str = "macos";
 
-    use super::common::{check_browser, check_local_file};
+    use super::common::*;
     use webbrowser::Browser;
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
@@ -48,6 +48,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_local_file_abs_path() {
         check_local_file(Browser::Default, None, |pb| {
@@ -56,6 +57,7 @@ mod tests {
         .await;
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_local_file_rel_path() {
         let cwd = std::env::current_dir().expect("unable to get current dir");
@@ -69,6 +71,7 @@ mod tests {
         .await;
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_local_file_uri() {
         check_local_file(Browser::Default, None, |pb| {
@@ -77,5 +80,13 @@ mod tests {
                 .to_string()
         })
         .await;
+    }
+
+    #[cfg(feature = "hardened")]
+    #[test]
+    fn test_hardened_mode() {
+        let err = webbrowser::open("file:///etc/passwd")
+            .expect_err("expected non-http url to fail in hardened mode");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
     }
 }

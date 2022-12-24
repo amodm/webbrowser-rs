@@ -5,7 +5,7 @@ mod common;
 mod tests {
     const TEST_PLATFORM: &str = "unix";
 
-    use super::common::{check_browser, check_local_file};
+    use super::common::*;
     use serial_test::serial;
     use webbrowser::Browser;
 
@@ -25,6 +25,7 @@ mod tests {
         assert!(!Browser::Safari.exists(), "should not have found Safari");
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     #[serial]
     async fn test_local_file_abs_path() {
@@ -34,6 +35,7 @@ mod tests {
         .await;
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     #[serial]
     async fn test_local_file_rel_path() {
@@ -48,6 +50,7 @@ mod tests {
         .await;
     }
 
+    #[cfg(not(feature = "hardened"))]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     #[serial]
     async fn test_local_file_uri() {
@@ -57,5 +60,13 @@ mod tests {
                 .to_string()
         })
         .await;
+    }
+
+    #[cfg(feature = "hardened")]
+    #[test]
+    fn test_hardened_mode() {
+        let err = webbrowser::open("file:///etc/passwd")
+            .expect_err("expected non-http url to fail in hardened mode");
+        assert_eq!(err.kind(), std::io::ErrorKind::InvalidInput);
     }
 }

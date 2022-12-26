@@ -323,10 +323,7 @@ impl TargetType {
         target_family = "wasm"
     ))]
     fn is_http(&self) -> bool {
-        match self.0.scheme() {
-            "http" | "https" => true,
-            _ => false,
-        }
+        matches!(self.0.scheme(), "http" | "https")
     }
 
     /// If `target` represents a valid http/https url, return the str corresponding to it

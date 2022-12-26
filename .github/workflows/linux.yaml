@@ -25,10 +25,8 @@ jobs:
       - uses: actions/checkout@v3
         name: Checkout
       - name: Install specific rust version
-        if: ${{ matrix.rust }} != "stable"
-        run: rustup install ${{ matrix.rust }}
-      - name: Install rustfmt & clippy
-        run: rustup component add rustfmt clippy
+        if: ${{ matrix.rust != 'stable' }}
+        run: rustup install ${{ matrix.rust }} --profile minimal
       - name: Compile
         run: cargo build
       - name: Run Tests

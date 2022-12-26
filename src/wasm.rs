@@ -38,11 +38,11 @@ pub(super) fn open_browser_internal(
 }
 
 /// Print to browser console
-fn wasm_console_log(_msg: &str, options: &BrowserOptions) {
+fn wasm_console_log(_msg: &str, _options: &BrowserOptions) {
     #[cfg(all(debug_assertions, feature = "wasm-console"))]
-    if !options.suppress_output {
+    if !_options.suppress_output {
         web_sys::console::log_1(&format!("[webbrowser] {}", &_msg).into());
     }
 }
 
-const POPUP_ERR_MSG: &'static str = "popup blocked? window detected, but open_url failed";
+const POPUP_ERR_MSG: &str = "popup blocked? window detected, but open_url failed";

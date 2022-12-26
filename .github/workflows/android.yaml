@@ -9,7 +9,7 @@ on:
 env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
-  RUST_LOG: webbrowser=TRACE
+  RUST_LOG: webbrowser=TRACE,tests=TRACE
   CARGO_APK_VERSION: '0.9.7'
   ANDROID_ARCH: x86_64
   ANDROID_TARGET: x86_64-linux-android
@@ -46,6 +46,13 @@ jobs:
         if: steps.cargo-apk-cache.outputs.cache-hit != 'true'
         run: cargo install cargo-apk --version ${{ env.CARGO_APK_VERSION }}
 
+      # Pre-build
+      - name: Compile
+        run: rustup run ${{ matrix.rust }} cargo apk build --target ${{ env.ANDROID_TARGET }}
+        working-directory: tests/test-android-app
+      - name: Compile tests
+        run: rustup run ${{ matrix.rust }} cargo build --test test_android
+
       # Check if AVD is in cache, else create AVD
       - name: AVD cache
         uses: actions/cache@v3
@@ -77,7 +84,7 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: bash -c 'ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} rustup run ${{ matrix.rust }} cargo test --test test_android -- --ignored'
+          script: bash -c 'ANDROID_TARGET=${{ env.ANDROID_TARGET }} ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} rustup run ${{ matrix.rust }} cargo test --test test_android -- --ignored'
 
       # Code format, linting etc.
       - name: Check Code Formatting

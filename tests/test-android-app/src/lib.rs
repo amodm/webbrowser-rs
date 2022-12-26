@@ -5,7 +5,7 @@ const SERVER_URL: &str = "http://127.0.0.1";
 
 #[cfg_attr(target_os = "android", ndk_glue::main(backtrace = "on"))]
 pub fn android_main() {
-    println!("****** [WEBB DEBUG] ***** begin");
+    println!("****** [WEBB DEBUG] {} ***** begin", SERVER_URL);
     webbrowser::open(SERVER_URL).unwrap();
-    println!("****** [WEBB DEBUG] ***** end");
+    println!("****** [WEBB DEBUG] {} ***** end", SERVER_URL);
 }

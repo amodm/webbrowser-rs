@@ -8,7 +8,6 @@ mod tests {
     use super::common::check_request_received_using;
     use std::fs;
     use std::path::PathBuf;
-    use webbrowser::Browser;
 
     // to run this test, run it as:
     // cargo test --test test_wasm32 -- --ignored
@@ -44,15 +43,5 @@ mod tests {
             status.expect("browser open failed");
         })
         .await;
-    }
-
-    #[test]
-    fn test_existence_default() {
-        assert!(Browser::is_available(), "should've found a browser");
-    }
-
-    #[test]
-    fn test_non_existence_safari() {
-        assert!(!Browser::Safari.exists(), "should've not found Safari");
     }
 }

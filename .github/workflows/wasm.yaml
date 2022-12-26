@@ -10,7 +10,8 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: webbrowser=TRACE
-  WASM_PACK_VERSION: '0.10.2'
+  WASM_PACK_VERSION: '0.10.3'
+  WASM_TARGET: wasm32-unknown-unknown
 
 jobs:
   build:
@@ -18,20 +19,18 @@ jobs:
     runs-on: ubuntu-latest
     if: ${{ !contains(github.event.head_commit.message, '#build-') || contains(github.event.head_commit.message, '#build-wasm') }}
     strategy:
+      max-parallel: 1
       matrix:
-        rust: [stable]
-    continue-on-error: ${{ matrix.rust != 'stable' }}
+        rust: [stable, beta]
+    continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust Toolchain
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          override: true
-          components: rustfmt, clippy
-          target: wasm32-unknown-unknown
+      - name: Install rust version
+        run: |
+          rustup install ${{ matrix.rust }} --profile minimal
+          rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
+          rustup target add ${{ env.WASM_TARGET }}
 
       # Install wasm-pack
       - uses: actions/cache@v3
@@ -42,44 +41,26 @@ jobs:
           key: wasm-pack-${{ env.WASM_PACK_VERSION }}
       - name: Install wasm-pack
         if: steps.wasm-pack-cache.outputs.cache-hit != 'true'
-        uses: actions-rs/install@v0.1
-        with:
-          crate: wasm-pack
-          version: ${{ env.WASM_PACK_VERSION }}
-          use-tool-cache: false
+        run: cargo install wasm-pack --version ${{ env.WASM_PACK_VERSION }}
 
       # Compile using WEBBROWSER_WASM_TARGET=_self so that we don't encounter popup blockers
       - name: Compile
         env:
+          RUST_LOG: info
           WEBBROWSER_WASM_TARGET: _self
-        run: wasm-pack build --target web --dev
+        run: rustup run ${{ matrix.rust }} wasm-pack build --target web --dev
         working-directory: tests/test-wasm-app
-
-      # Install firefox
-      - name: Install firefox
-        uses: browser-actions/setup-firefox@latest
-        with:
-          firefox-version: '97.0'
-      - name: Custom headless firefox script
-        run: |
-          echo '#!/bin/sh' > /tmp/hffox
-          echo 'nohup firefox --headless "$*" >/dev/null 2>&1 &' >> /tmp/hffox
-          chmod 755 /tmp/hffox
 
       # Run tests
       - name: Run tests
         env:
-          BROWSER: /tmp/hffox %s
-        run: cargo test --test test_wasm -- --ignored
+          BROWSER: firefox --screenshot %s
+        run: cargo +${{ matrix.rust }} test --test test_wasm -- --ignored
 
       # Code format, linting etc.
-      - uses: actions-rs/cargo@v1
-        name: Check Code Formatting
-        with:
-          command: fmt
-          args: --all -- --check
-      - uses: actions-rs/cargo@v1
-        name: Lints
-        with:
-          command: clippy
-          args: --all-targets -- -D warnings
+      - name: Check Code Formatting
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
+      - name: Lints
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} clippy --target ${{ env.WASM_TARGET }} -- -D warnings

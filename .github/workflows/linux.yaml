@@ -20,22 +20,23 @@ jobs:
       max-parallel: 1
       matrix:
         rust: [stable, beta, nightly]
-    continue-on-error: ${{ matrix.rust != 'stable' }}
+    continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
-      - name: Install specific rust version
-        if: ${{ matrix.rust != 'stable' }}
-        run: rustup install ${{ matrix.rust }} --profile minimal
+      - name: Install rust version
+        run: rustup install ${{ matrix.rust }}
       - name: Compile
-        run: cargo build
+        run: cargo +${{ matrix.rust }} build
       - name: Run Tests
         env:
           BROWSER: firefox --screenshot %s
-        run: cargo test --all --locked --verbose
+        run: cargo +${{ matrix.rust }} test --all --locked --verbose
       - name: Run Tests (hardened)
-        run: cargo test --features hardened --locked --verbose --test test_unix tests::test_hardened_mode
+        run: cargo +${{ matrix.rust }} test --features hardened --locked --verbose --test test_unix tests::test_hardened_mode
       - name: Check Code Formatting
-        run: cargo fmt --all -- --check
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
       - name: Lints
-        run: cargo clippy --all-targets -- -D warnings
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} clippy --all-targets -- -D warnings

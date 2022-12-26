@@ -29,7 +29,7 @@ pub(super) fn open_browser_internal(
         // Create NSURL object with given string
         let url_object: *mut Object = msg_send![class!(NSURL), URLWithString: url_string];
         // No completion handler
-        let null_ptr = 0 as *mut Object;
+        let null_ptr = std::ptr::null_mut::<Object>();
         // Open url
         let () = msg_send![app, openURL: url_object options: {} completionHandler: null_ptr];
         Ok(())

@@ -10,7 +10,9 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: webbrowser=TRACE
-  CARGO_APK_VERSION: '0.8.2'
+  CARGO_APK_VERSION: '0.9.7'
+  ANDROID_ARCH: x86_64
+  ANDROID_TARGET: x86_64-linux-android
 
 jobs:
   build:
@@ -19,22 +21,19 @@ jobs:
     if: ${{ !contains(github.event.head_commit.message, '#build-') || contains(github.event.head_commit.message, '#build-android') }}
     strategy:
       matrix:
-        rust: [stable ]
-        api-level: [ 29 ]
-        ndk-version: [ '22.1.7171670' ]
-        cmake-version: [ '3.18.1' ]
-    continue-on-error: ${{ matrix.rust != 'stable' }}
+        rust: [ stable ]
+        api-level: [ 30 ]
+        ndk-version: [ '25.1.8937393' ]
+        cmake-version: [ '3.22.1' ]
+    continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
-      - uses: actions-rs/toolchain@v1
-        name: Install Rust Toolchain
-        with:
-          profile: minimal
-          toolchain: ${{ matrix.rust }}
-          target: i686-linux-android
-          override: true
-          components: rustfmt, clippy
+      - name: Install rust version
+        run: |
+          rustup install ${{ matrix.rust }} --profile minimal
+          rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
+          rustup target add ${{ env.ANDROID_TARGET }}
 
       # Install cargo-apk
       - uses: actions/cache@v3
@@ -45,17 +44,7 @@ jobs:
           key: cargo-apk-${{ env.CARGO_APK_VERSION }}
       - name: Install cargo-apk
         if: steps.cargo-apk-cache.outputs.cache-hit != 'true'
-        uses: actions-rs/install@v0.1
-        with:
-          crate: cargo-apk
-          version: ${{ env.CARGO_APK_VERSION }}
-          use-tool-cache: false
-
-      # Compile
-      - uses: actions-rs/cargo@v1
-        name: Compile
-        with:
-          command: build
+        run: cargo install cargo-apk --version ${{ env.CARGO_APK_VERSION }}
 
       # Check if AVD is in cache, else create AVD
       - name: AVD cache
@@ -70,6 +59,7 @@ jobs:
         if: steps.avd-cache.outputs.cache-hit != 'true'
         uses: reactivecircus/android-emulator-runner@v2
         with:
+          arch: ${{ env.ANDROID_ARCH }}
           api-level: ${{ matrix.api-level }}
           force-avd-creation: false
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
@@ -77,7 +67,7 @@ jobs:
           script: echo "Generated AVD snapshot for caching."
 
       # Run tests on emulator
-      - name: run tests
+      - name: Run tests
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: ${{ matrix.api-level }}
@@ -86,16 +76,12 @@ jobs:
           force-avd-creation: false
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: true
-          script: bash -c 'ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} cargo test --test test_android -- --ignored'
+          script: bash -c 'ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} rustup run ${{ matrix.rust }} cargo test --test test_android -- --ignored'
 
       # Code format, linting etc.
-      - uses: actions-rs/cargo@v1
-        name: Check Code Formatting
-        with:
-          command: fmt
-          args: --all -- --check
-      - uses: actions-rs/cargo@v1
-        name: Lints
-        with:
-          command: clippy
-          args: --all-targets -- -D warnings
+      - name: Check Code Formatting
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} fmt --all -- --check
+      - name: Lints
+        if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
+        run: cargo +${{ matrix.rust }} clippy --target ${{ env.ANDROID_TARGET }} -- -D warnings

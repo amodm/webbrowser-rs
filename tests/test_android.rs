@@ -24,13 +24,6 @@ mod tests {
         app_dir.push("tests/test-android-app");
         let uri = format!("/{}", TEST_PLATFORM);
 
-        // prebuild to make sure time within check_request_received_using() is minimised
-        let _ = Command::new("cargo")
-            .arg("apk")
-            .arg("build")
-            .current_dir(&app_dir)
-            .status();
-
         let ipv4 = get_ipv4_address();
         check_request_received_using(uri, &ipv4, |url| {
             // modify android app code to use the correct url
@@ -50,14 +43,17 @@ mod tests {
                 .collect::<Vec<String>>()
                 .join("\n");
             fs::write(&lib_rs, new_code).expect("failed to modify src/lib.rs");
-            println!("modified src/lib.rs to use {}", url);
+            log::debug!("modified src/lib.rs to use {}", url);
 
             // invoke app in android
-            let apk_run_status = Command::new("cargo")
-                .arg("apk")
-                .arg("run")
-                .current_dir(&app_dir)
-                .status();
+            let mut apk_run_cmd = Command::new("cargo");
+            apk_run_cmd.arg("apk").arg("run");
+            if let Some(target) = option_env!("ANDROID_TARGET") {
+                apk_run_cmd.arg("--target").arg(target);
+            }
+            apk_run_cmd.arg("--no-logcat");
+
+            let apk_run_status = apk_run_cmd.current_dir(&app_dir).status();
 
             // revert to the old code
             fs::write(&lib_rs, &old_code).expect("failed to modify src/lib.rs");

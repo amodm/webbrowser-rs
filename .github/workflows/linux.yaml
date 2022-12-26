@@ -25,7 +25,9 @@ jobs:
       - uses: actions/checkout@v3
         name: Checkout
       - name: Install rust version
-        run: rustup install ${{ matrix.rust }}
+        run: |
+          rustup install ${{ matrix.rust }} --profile minimal
+          rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
       - name: Compile
         run: cargo +${{ matrix.rust }} build
       - name: Run Tests

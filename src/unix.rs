@@ -22,7 +22,7 @@ macro_rules! try_browser {
 /// The mechanism of opening the default browser is as follows:
 /// 1. Attempt to use $BROWSER env var if available
 /// 2. Attempt to use xdg-open
-/// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc.
+/// 3. Attempt to use window manager specific commands, like gnome-open, kde-open etc. incl. WSL
 /// 4. Fallback to x-www-browser
 pub(super) fn open_browser_internal(
     browser: Browser,
@@ -42,7 +42,9 @@ pub(super) fn open_browser_internal(
 ///
 /// [BrowserOptions::dry_run] is handled inside [run_command], as all execution paths eventually
 /// rely on it to execute.
-fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
+fn open_browser_default(target: &TargetType, options: &BrowserOptions) -> Result<()> {
+    let url: &str = target;
+
     // we first try with the $BROWSER env
     try_with_browser_env(url, options)
         // allow for haiku's open specifically
@@ -66,6 +68,8 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
             "xfce" => try_browser!(options, "exo-open", url)
                 .or_else(|_| try_browser!(options, "gio", "open", url))
                 .or_else(|_| try_browser!(options, "gvfs-open", url)),
+
+            "wsl" => try_wsl(options, target),
 
             _ => Err(r),
         })
@@ -119,6 +123,26 @@ fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
     ))
 }
 
+/// Check if we are inside WSL on Windows, and interoperability with Windows tools is
+/// enabled.
+fn is_wsl() -> bool {
+    // we should check in procfs only on linux, as for non-linux it will likely be
+    // a disk hit, which we should avoid.
+    if cfg!(target_os = "linux") {
+        // we check if interop with windows tools is allowed, as if it isn't, we won't
+        // be able to invoke windows commands anyways.
+        // See: https://learn.microsoft.com/en-us/windows/wsl/filesystems#disable-interoperability
+        if let Ok(s) = std::fs::read_to_string("/proc/sys/fs/binfmt_misc/WSLInterop") {
+            s.contains("enabled")
+        } else {
+            false
+        }
+    } else {
+        // we short-circuit and return false on non-linux
+        false
+    }
+}
+
 /// Detect the desktop environment
 fn guess_desktop_env() -> &'static str {
     let unknown = "unknown";
@@ -144,10 +168,20 @@ fn guess_desktop_env() -> &'static str {
     } else if xcd.contains("xfce") || dsession.contains("xfce") {
         // XFCE
         "xfce"
+    } else if is_wsl() {
+        // WSL
+        "wsl"
     } else {
         // All others
         unknown
     }
+}
+
+fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
+    let url = target.get_http_url()?;
+    try_browser!(options, "cmd.exe", "/c", "start", url)
+        .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
+        .or_else(|_| try_browser!(options, "wsl-open", url))
 }
 
 /// Handle Haiku explicitly, as it uses an "open" command, similar to macos
@@ -372,7 +406,7 @@ fn run_command(cmd: &mut Command, background: bool, options: &BrowserOptions) ->
         debug!("foreground exec: {:?}", &cmd);
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
         // till completion.
-        // We also specifically don't supress anything here, because we're running here
+        // We also specifically don't suppress anything here, because we're running here
         // most likely because of a text browser
         cmd.status().and_then(|status| {
             if status.success() {

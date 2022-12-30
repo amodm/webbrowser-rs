@@ -11,7 +11,7 @@
 ![Android Build](https://github.com/amodm/webbrowser-rs/workflows/Android/badge.svg?branch=main&x=1)
 ![WASM Build](https://github.com/amodm/webbrowser-rs/workflows/WASM/badge.svg?branch=main&x=1)
 
-Rust library to open URLs in the web browsers available on a platform
+Rust library to open URLs and local files in the web browsers available on a platform, with guarantees of [Consistent Behaviour](#consistent-behaviour).
 
 Inspired by the [webbrowser](https://docs.python.org/2/library/webbrowser.html) python library
 
@@ -44,9 +44,9 @@ if webbrowser::open("http://github.com").is_ok() {
 
 ## Consistent Behaviour
 `webbrowser` defines consistent behaviour on all platforms as follows:
-* **Browser guarantee** - alternative libraries rely on underlying system commands, which leads to a behaviour that if you open a local html
-file, sometimes it may open in an editor instead of the browser, because of the local file association being respected by that command.
-This library guarantees that it's a browser that is opened (as determined by `http` scheme association, not local file association).
+* **Browser guarantee** - This library guarantees that the browser is opened, even for local files - the only crate to make such guarantees
+at the time of this writing. Alternative libraries rely on existing system commands, which may lead to an editor being opened (instead
+of the browser) for local html files, leading to an inconsistent behaviour for users.
 * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
 * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be
 overridden by `webbrowser::open_browser_with_options`.

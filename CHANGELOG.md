@@ -3,6 +3,22 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.3] - 2022-12-30 <a name="0.8.3"></a>
+## Added
+- Web browser is guaranteed to open for local files even if local file association was to a non-browser app (say an editor). This now is formally
+incorporated as part of this crate's [Consistent Behaviour(https://github.com/amodm/webbrowser-rs/blob/main/README.md#consistent-behaviour)
+- WSL support, thanks to [@Nachtalb](https://github.com/Nachtalb). This works even if `wslu` is not installed in WSL environments.
+- A new feature `hardened` now available for applications which require only http(s) urls to be opened. This acts as a security feature.
+
+## Changed
+- On macOS, we now use `CoreFoundation` library instead of `open` command.
+- On Linux/*BSD, we now parse xdg configuration to execute the command directly, instead of using `xdg-open` command. This allows us to open the
+browser for local html files, even if the `.html` extension was associated with an edit (see #55)
+
+## Fixed
+- The guarantee of web browser being opened (instead of local file association), now solves for the scenario where the URL is crafted to be an
+executable. This was reported privately by [@offalltn](https://github.com/offalltn).
+
 ## [0.8.2] - 2022-11-08 <a name="0.8.2"></a>
 ### Fixed
 - Fix app crashes when running under termux on Android. See #53 and #54.
@@ -112,7 +128,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/amodm/webbrowser-rs/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/amodm/webbrowser-rs/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/amodm/webbrowser-rs/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/amodm/webbrowser-rs/compare/v0.7.1...v0.8.0

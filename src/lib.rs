@@ -319,7 +319,6 @@ impl TargetType {
     #[cfg(any(
         feature = "hardened",
         target_os = "android",
-        target_os = "linux",
         target_os = "ios",
         target_family = "wasm"
     ))]
@@ -329,12 +328,7 @@ impl TargetType {
 
     /// If `target` represents a valid http/https url, return the str corresponding to it
     /// else return `std::io::Error` of kind `std::io::ErrorKind::InvalidInput`
-    #[cfg(any(
-        target_os = "android",
-        target_os = "linux",
-        target_os = "ios",
-        target_family = "wasm"
-    ))]
+    #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
     fn get_http_url(&self) -> Result<&str> {
         if self.is_http() {
             Ok(self.0.as_str())

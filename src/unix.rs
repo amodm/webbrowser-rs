@@ -178,10 +178,28 @@ fn guess_desktop_env() -> &'static str {
 }
 
 fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
-    let url = target.get_http_url()?;
-    try_browser!(options, "cmd.exe", "/c", "start", url)
-        .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
-        .or_else(|_| try_browser!(options, "wsl-open", url))
+    match target.0.scheme() {
+        "http" | "https" => {
+            let url: &str = target;
+            try_browser!(options, "cmd.exe", "/c", "start", url)
+                .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
+                .or_else(|_| try_browser!(options, "wsl-open", url))
+        }
+        "file" => {
+            if cfg!(target_os = "linux") {
+                let wc = wsl::get_wsl_win_config()?;
+                let mut cmd = if wc.powershell_path.is_some() {
+                    wsl::get_wsl_windows_browser_ps(&wc, target)
+                } else {
+                    wsl::get_wsl_windows_browser_cmd(&wc, target)
+                }?;
+                run_command(&mut cmd, true, options)
+            } else {
+                Err(Error::new(ErrorKind::NotFound, "invalid browser"))
+            }
+        }
+        _ => Err(Error::new(ErrorKind::NotFound, "invalid browser")),
+    }
 }
 
 /// Handle Haiku explicitly, as it uses an "open" command, similar to macos
@@ -530,4 +548,337 @@ Exec=/bin/ls
 
         assert!(result.is_ok());
     }
+}
+
+/// WSL related browser functionality.
+///
+/// We treat it as a separate submod, to allow for easy logical grouping
+/// and to enable/disable based on some feature easily in future.
+#[cfg(target_os = "linux")]
+mod wsl {
+    use crate::{Result, TargetType};
+    use std::io::{Error, ErrorKind};
+    use std::path::{Path, PathBuf};
+    use std::process::{Command, Stdio};
+
+    pub(super) struct WindowsConfig {
+        root: PathBuf,
+        cmd_path: PathBuf,
+        pub(super) powershell_path: Option<PathBuf>,
+    }
+
+    /// Returns a [WindowsConfig] by iterating over PATH entries. This seems to be
+    /// the fastest way to determine this.
+    pub(super) fn get_wsl_win_config() -> Result<WindowsConfig> {
+        let err_fn = || Error::new(ErrorKind::NotFound, "invalid windows config");
+        if let Some(path_env) = std::env::var_os("PATH") {
+            let mut root: Option<PathBuf> = None;
+            let mut cmd_path: Option<PathBuf> = None;
+            let mut powershell_path: Option<PathBuf> = None;
+            for path in std::env::split_paths(&path_env) {
+                let path_s = path.to_string_lossy().to_ascii_lowercase();
+                let path_s = path_s.trim_end_matches('/');
+                if path_s.ends_with("/windows/system32") {
+                    root = Some(std::fs::canonicalize(path.join("../.."))?);
+                    cmd_path = Some(path.join("cmd.exe"));
+                    break;
+                }
+            }
+            if let Some(ref root) = root {
+                for path in std::env::split_paths(&path_env) {
+                    if path.starts_with(root) {
+                        let pb = path.join("powershell.exe");
+                        if pb.is_file() {
+                            powershell_path = Some(pb);
+                        }
+                    }
+                }
+            }
+            if let Some(root) = root {
+                let cmd_path = cmd_path.unwrap_or_else(|| (root).join("windows/system32/cmd.exe"));
+                Ok(WindowsConfig {
+                    root,
+                    cmd_path,
+                    powershell_path,
+                })
+            } else {
+                Err(err_fn())
+            }
+        } else {
+            Err(err_fn())
+        }
+    }
+
+    /// Try to get default browser command from powershell.exe
+    pub(super) fn get_wsl_windows_browser_ps(
+        wc: &WindowsConfig,
+        url: &TargetType,
+    ) -> Result<Command> {
+        let err_fn = || Error::new(ErrorKind::NotFound, "powershell.exe error");
+        let ps_exe = wc.powershell_path.as_ref().ok_or_else(err_fn)?;
+        let mut cmd = Command::new(ps_exe);
+        cmd.arg("-NoLogo")
+            .arg("-NoProfile")
+            .arg("-NonInteractive")
+            .arg("-Command")
+            .arg("-")
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
+        log::debug!("running command: ${:?}", &cmd);
+        let mut child = cmd.spawn()?;
+
+        let mut stdin = child.stdin.take().ok_or_else(err_fn)?;
+        std::io::Write::write_all(&mut stdin, WSL_PS_SCRIPT.as_bytes())?;
+        drop(stdin); // flush to stdin, and close
+        let output_u8 = child.wait_with_output()?;
+        let output = String::from_utf8_lossy(&output_u8.stdout);
+        let output = output.trim();
+        if output.is_empty() {
+            Err(err_fn())
+        } else {
+            parse_wsl_cmdline(wc, output, url)
+        }
+    }
+
+    /// Try to get default browser command from cmd.exe
+    pub(super) fn get_wsl_windows_browser_cmd(
+        wc: &WindowsConfig,
+        url: &TargetType,
+    ) -> Result<Command> {
+        let err_fn = || Error::new(ErrorKind::NotFound, "cmd.exe error");
+        let mut cmd = Command::new(&wc.cmd_path);
+        cmd.arg("/Q")
+            .arg("/C")
+            .arg("ftype http")
+            .stdin(Stdio::null())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null());
+        log::debug!("running command: ${:?}", &cmd);
+        let output_u8 = cmd.output()?;
+
+        let output = String::from_utf8_lossy(&output_u8.stdout);
+        let output = output.trim();
+        if output.is_empty() {
+            Err(err_fn())
+        } else {
+            parse_wsl_cmdline(wc, output, url)
+        }
+    }
+
+    /// Given the configured command line `cmdline` in registry, and the given `url`,
+    /// return the appropriate `Command` to invoke
+    fn parse_wsl_cmdline(wc: &WindowsConfig, cmdline: &str, url: &TargetType) -> Result<Command> {
+        let mut tokens: Vec<String> = Vec::new();
+        let filepath = wsl_get_filepath_from_url(wc, url)?;
+        let fp = &filepath;
+        for_each_token(cmdline, |token: &str| {
+            if matches!(token, "%0" | "%1") {
+                tokens.push(fp.to_owned());
+            } else {
+                tokens.push(token.to_string());
+            }
+        });
+        if tokens.is_empty() {
+            Err(Error::new(ErrorKind::NotFound, "invalid command"))
+        } else {
+            let progpath = wsl_path_win2lin(wc, &tokens[0])?;
+            let mut cmd = Command::new(progpath);
+            if tokens.len() > 1 {
+                cmd.args(&tokens[1..]);
+            }
+            Ok(cmd)
+        }
+    }
+
+    /// Parses `line` to find tokens (including quoted strings), and invokes `op`
+    /// on each token
+    fn for_each_token<F>(line: &str, mut op: F)
+    where
+        F: FnMut(&str),
+    {
+        let mut start: Option<usize> = None;
+        let mut in_quotes = false;
+        let mut idx = 0;
+        for ch in line.chars() {
+            idx += 1;
+            match ch {
+                '"' => {
+                    if let Some(start_idx) = start {
+                        op(&line[start_idx..idx - 1]);
+                        start = None;
+                        in_quotes = false;
+                    } else {
+                        start = Some(idx);
+                        in_quotes = true;
+                    }
+                }
+                ' ' => {
+                    if !in_quotes {
+                        if let Some(start_idx) = start {
+                            op(&line[start_idx..idx - 1]);
+                            start = None;
+                        }
+                    }
+                }
+                _ => {
+                    if start.is_none() {
+                        start = Some(idx - 1);
+                    }
+                }
+            }
+        }
+        if let Some(start_idx) = start {
+            op(&line[start_idx..idx]);
+        }
+    }
+
+    fn wsl_get_filepath_from_url(wc: &WindowsConfig, target: &TargetType) -> Result<String> {
+        let url = &target.0;
+        if url.scheme() == "file" {
+            if url.host().is_none() {
+                let path = url
+                    .to_file_path()
+                    .map_err(|_| Error::new(ErrorKind::NotFound, "invalid path"))?;
+                wsl_path_lin2win(wc, path)
+            } else {
+                Ok(format!("\\\\wsl${}", url.path().replace('/', "\\")))
+            }
+        } else {
+            Ok(url.as_str().to_string())
+        }
+    }
+
+    /// Converts a windows path to linux `PathBuf`
+    fn wsl_path_win2lin(wc: &WindowsConfig, path: &str) -> Result<PathBuf> {
+        let err_fn = || Error::new(ErrorKind::NotFound, "invalid windows path");
+        if path.len() > 3 {
+            let pfx = &path[..3];
+            if matches!(pfx, "C:\\" | "c:\\") {
+                let win_path = path[3..].replace('\\', "/");
+                Ok(wc.root.join(win_path))
+            } else {
+                Err(err_fn())
+            }
+        } else {
+            Err(err_fn())
+        }
+    }
+
+    /// Converts a linux path to windows. We using `String` instead of `OsString` as
+    /// return type because the `OsString` will be different b/w Windows & Linux.
+    fn wsl_path_lin2win(wc: &WindowsConfig, path: impl AsRef<Path>) -> Result<String> {
+        let path = path.as_ref();
+        if let Ok(path) = path.strip_prefix(&wc.root) {
+            // windows can access this path directly
+            Ok(format!("C:\\{}", path.as_os_str().to_string_lossy()).replace('/', "\\"))
+        } else {
+            // windows needs to access it via network
+            let wsl_hostname = get_wsl_distro_name(wc)?;
+            Ok(format!(
+                "\\\\wsl$\\{}{}",
+                &wsl_hostname,
+                path.as_os_str().to_string_lossy()
+            )
+            .replace('/', "\\"))
+        }
+    }
+
+    /// Gets the WSL distro name
+    fn get_wsl_distro_name(wc: &WindowsConfig) -> Result<String> {
+        let err_fn = || Error::new(ErrorKind::Other, "unable to determine wsl distro name");
+
+        // mostly we should be able to get it from the WSL_DISTRO_NAME env var
+        if let Ok(wsl_hostname) = std::env::var("WSL_DISTRO_NAME") {
+            Ok(wsl_hostname)
+        } else {
+            // but if not (e.g. if we were running as root), we can invoke
+            // powershell.exe to determine pwd and from there infer the distro name
+            let psexe = wc.powershell_path.as_ref().ok_or_else(err_fn)?;
+            let mut cmd = Command::new(psexe);
+            cmd.arg("-NoLogo")
+                .arg("-NoProfile")
+                .arg("-NonInteractive")
+                .arg("-Command")
+                .arg("$loc = Get-Location\nWrite-Output $loc.Path")
+                .current_dir("/")
+                .stdin(Stdio::null())
+                .stderr(Stdio::null());
+            log::debug!("running command: ${:?}", &cmd);
+            let output_u8 = cmd.output()?.stdout;
+            let output = String::from_utf8_lossy(&output_u8);
+            let output = output.trim_end_matches('\\');
+            let idx = output.find("::\\\\").ok_or_else(err_fn)?;
+            Ok((output[idx + 9..]).trim().to_string())
+        }
+    }
+
+    /// Powershell script to get the default browser command.
+    ///
+    /// Adapted from https://stackoverflow.com/a/60972216
+    const WSL_PS_SCRIPT: &str = r#"
+$Signature = @"
+using System;
+using System.Runtime.InteropServices;
+using System.Text;
+public static class Win32Api
+{
+
+    [DllImport("Shlwapi.dll", SetLastError = true, CharSet = CharSet.Auto)]
+    static extern uint AssocQueryString(AssocF flags, AssocStr str, string pszAssoc, string pszExtra,[Out] System.Text.StringBuilder pszOut, ref uint pcchOut);
+
+    public static string GetDefaultBrowser()
+    {
+        AssocF assocF = AssocF.IsProtocol;
+        AssocStr association = AssocStr.Command;
+        string assocString = "http";
+
+        uint length = 1024; // we assume 1k is sufficient memory to hold the command
+        var sb = new System.Text.StringBuilder((int) length);
+        uint ret = ret = AssocQueryString(assocF, association, assocString, null, sb, ref length);
+
+        return (ret != 0) ? null : sb.ToString();
+    }
+
+    [Flags]
+    internal enum AssocF : uint
+    {
+        IsProtocol = 0x1000,
+    }
+
+    internal enum AssocStr
+    {
+        Command = 1,
+        Executable,
+    }
+}
+"@
+
+Add-Type -TypeDefinition $Signature
+
+Write-Output $([Win32Api]::GetDefaultBrowser())
+"#;
+
+    /*#[cfg(test)]
+    mod tests {
+        use crate::open;
+
+        #[test]
+        fn test_url() {
+            let _ = env_logger::try_init();
+            assert!(open("https://github.com").is_ok());
+        }
+
+        #[test]
+        fn test_linux_file() {
+            let _ = env_logger::try_init();
+            assert!(open("abc.html").is_ok());
+        }
+
+        #[test]
+        fn test_windows_file() {
+            let _ = env_logger::try_init();
+            assert!(open("/mnt/c/T/abc.html").is_ok());
+        }
+    }*/
 }

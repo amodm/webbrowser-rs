@@ -6,7 +6,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 ## [0.8.3] - 2022-12-30 <a name="0.8.3"></a>
 ## Added
 - Web browser is guaranteed to open for local files even if local file association was to a non-browser app (say an editor). This now is formally
-incorporated as part of this crate's [Consistent Behaviour(https://github.com/amodm/webbrowser-rs/blob/main/README.md#consistent-behaviour)
+incorporated as part of this crate's [Consistent Behaviour](https://github.com/amodm/webbrowser-rs/blob/main/README.md#consistent-behaviour)
 - WSL support, thanks to [@Nachtalb](https://github.com/Nachtalb). This works even if `wslu` is not installed in WSL environments.
 - A new feature `hardened` now available for applications which require only http(s) urls to be opened. This acts as a security feature.
 

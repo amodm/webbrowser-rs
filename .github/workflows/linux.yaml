@@ -36,6 +36,8 @@ jobs:
         run: cargo +${{ matrix.rust }} test --all --locked --verbose
       - name: Run Tests (hardened)
         run: cargo +${{ matrix.rust }} test --features hardened --locked --verbose --test test_unix tests::test_hardened_mode
+      - name: Check compilation with WSL disabled
+        run: cargo +${{ matrix.rust }} build --features disable-wsl
       - name: Check Code Formatting
         if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
         run: cargo +${{ matrix.rust }} fmt --all -- --check

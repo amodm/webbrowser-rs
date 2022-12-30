@@ -177,6 +177,7 @@ fn guess_desktop_env() -> &'static str {
     }
 }
 
+/// Open browser in WSL environments
 fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
     match target.0.scheme() {
         "http" | "https" => {
@@ -185,18 +186,21 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
                 .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
                 .or_else(|_| try_browser!(options, "wsl-open", url))
         }
+        #[cfg(all(
+            target_os = "linux",
+            not(feature = "hardened"),
+            not(feature = "disable-wsl")
+        ))]
         "file" => {
-            if cfg!(target_os = "linux") {
-                let wc = wsl::get_wsl_win_config()?;
-                let mut cmd = if wc.powershell_path.is_some() {
-                    wsl::get_wsl_windows_browser_ps(&wc, target)
-                } else {
-                    wsl::get_wsl_windows_browser_cmd(&wc, target)
-                }?;
-                run_command(&mut cmd, true, options)
+            // we'll need to detect the default browser and then invoke it
+            // with wsl translated path
+            let wc = wsl::get_wsl_win_config()?;
+            let mut cmd = if wc.powershell_path.is_some() {
+                wsl::get_wsl_windows_browser_ps(&wc, target)
             } else {
-                Err(Error::new(ErrorKind::NotFound, "invalid browser"))
-            }
+                wsl::get_wsl_windows_browser_cmd(&wc, target)
+            }?;
+            run_command(&mut cmd, true, options)
         }
         _ => Err(Error::new(ErrorKind::NotFound, "invalid browser")),
     }
@@ -554,7 +558,11 @@ Exec=/bin/ls
 ///
 /// We treat it as a separate submod, to allow for easy logical grouping
 /// and to enable/disable based on some feature easily in future.
-#[cfg(target_os = "linux")]
+#[cfg(all(
+    target_os = "linux",
+    not(feature = "hardened"),
+    not(feature = "disable-wsl")
+))]
 mod wsl {
     use crate::{Result, TargetType};
     use std::io::{Error, ErrorKind};

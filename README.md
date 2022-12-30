@@ -36,11 +36,11 @@ if webbrowser::open("http://github.com").is_ok() {
 |----------|-----------|----------|-------------|
 | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
 | windows  | ✅        | default only | ✅ |
-| linux/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
+| linux/wsl/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 | android  | ✅        | default only | ✅ |
+| ios      | ✅        | default only | ✅ |
 | wasm     | ✅        | default only | ✅ |
 | haiku    | ✅ (experimental) | default only | ❌ |
-| ios      | ✅        | default only | ✅ |
 
 ## Consistent Behaviour
 `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -54,6 +54,7 @@ overridden by `webbrowser::open_browser_with_options`.
 ## Crate Features
 `webbrowser` optionally allows the following features to be configured:
 * `hardened` - this disables handling of non-http(s) urls (e.g. `file:///`) as a hard security precaution
+* `disable-wsl` - this disables WSL `file` implementation (`http` still works)
 * `wasm-console` - this enables logging to wasm console (valid only on wasm platform)
 
 ## Looking to contribute?

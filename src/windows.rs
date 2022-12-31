@@ -1,21 +1,15 @@
-extern crate widestring;
-extern crate winapi;
-
+use crate::common::{for_each_token, run_command};
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-pub use std::os::windows::process::ExitStatusExt;
-use std::{mem, ptr};
-use widestring::U16CString;
-use winapi::shared::winerror::SUCCEEDED;
-use winapi::um::combaseapi::{CoInitializeEx, CoUninitialize};
-use winapi::um::objbase::{COINIT_APARTMENTTHREADED, COINIT_DISABLE_OLE1DDE};
-use winapi::um::shellapi::{
-    ShellExecuteExW, SEE_MASK_CLASSNAME, SEE_MASK_NOCLOSEPROCESS, SHELLEXECUTEINFOW,
-};
-use winapi::um::winuser::SW_SHOWNORMAL;
+use log::{error, trace};
+use std::process::Command;
+use windows::core::{PCWSTR, PWSTR};
+use windows::w;
+use windows::Win32::UI::Shell::{AssocQueryStringW, ASSOCF_IS_PROTOCOL, ASSOCSTR_COMMAND};
 
-/// Deal with opening of browsers on Windows, using [`ShellExecuteW`](
-/// https://docs.microsoft.com/en-us/windows/desktop/api/shellapi/nf-shellapi-shellexecutew)
-/// function.
+/// Deal with opening of browsers on Windows.
+///
+/// We first use [`AssocQueryStringW`](https://learn.microsoft.com/en-us/windows/win32/api/shlwapi/nf-shlwapi-assocquerystringw)
+/// function to determine the default browser, and then invoke it with appropriate parameters.
 ///
 /// We ignore BrowserOptions on Windows, except for honouring [BrowserOptions::dry_run]
 pub(super) fn open_browser_internal(
@@ -30,41 +24,59 @@ pub(super) fn open_browser_internal(
                 return Ok(());
             }
 
-            static OPEN: &[u16] = &['o' as u16, 'p' as u16, 'e' as u16, 'n' as u16, 0x0000];
-            static HTTP: &[u16] = &['h' as u16, 't' as u16, 't' as u16, 'p' as u16, 0x0000];
-            let url = U16CString::from_str(&**target)
-                .map_err(|e| Error::new(ErrorKind::InvalidInput, e))?;
-            let code = unsafe {
-                let coinitializeex_result = CoInitializeEx(
-                    ptr::null_mut(),
-                    COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE,
-                );
-                let mut sei = SHELLEXECUTEINFOW {
-                    cbSize: mem::size_of::<SHELLEXECUTEINFOW>() as u32,
-                    nShow: SW_SHOWNORMAL,
-                    lpFile: url.as_ptr(),
-                    fMask: SEE_MASK_CLASSNAME | SEE_MASK_NOCLOSEPROCESS,
-                    lpVerb: OPEN.as_ptr(),
-                    lpClass: HTTP.as_ptr(),
-                    ..Default::default()
-                };
-                ShellExecuteExW(&mut sei);
-                let code = sei.hInstApp as usize as i32;
+            trace!("trying to figure out default browser command");
+            let mut cmdline_u16 = [0_u16; 512];
+            let pwstr = PWSTR::from_raw((&mut cmdline_u16) as *mut u16);
+            let cmdline = unsafe {
+                let mut line_len: u32 = 512;
+                AssocQueryStringW(
+                    ASSOCF_IS_PROTOCOL as u32,
+                    ASSOCSTR_COMMAND,
+                    w!("http"),
+                    PCWSTR::null(),
+                    pwstr,
+                    &mut line_len as *mut u32,
+                )
+                .map_err(err_other)?;
 
-                if SUCCEEDED(coinitializeex_result) {
-                    CoUninitialize();
-                }
-                code
+                PCWSTR::from_raw(&cmdline_u16 as *const u16)
+                    .to_string()
+                    .map_err(err_other)?
             };
-            if code > 32 {
-                Ok(())
-            } else {
-                Err(Error::last_os_error())
-            }
+            trace!("default browser command: {}", &cmdline);
+            let mut cmd = get_browser_cmd(&cmdline, target)?;
+            run_command(&mut cmd, true, options)
         }
         _ => Err(Error::new(
             ErrorKind::NotFound,
             "Only the default browser is supported on this platform right now",
         )),
+    }
+}
+
+fn err_other(err: impl std::fmt::Display) -> Error {
+    error!("failed to get default browser: {}", &err);
+    Error::new(ErrorKind::Other, "failed to get default browser")
+}
+
+/// Given the configured command line `cmdline` in registry, and the given `url`,
+/// return the appropriate `Command` to invoke
+fn get_browser_cmd(cmdline: &str, url: &TargetType) -> Result<Command> {
+    let mut tokens: Vec<String> = Vec::new();
+    for_each_token(cmdline, |token: &str| {
+        if matches!(token, "%0" | "%1") {
+            tokens.push(url.to_string());
+        } else {
+            tokens.push(token.to_string());
+        }
+    });
+    if tokens.is_empty() {
+        Err(Error::new(ErrorKind::NotFound, "invalid command"))
+    } else {
+        let mut cmd = Command::new(&tokens[0]);
+        if tokens.len() > 1 {
+            cmd.args(&tokens[1..]);
+        }
+        Ok(cmd)
     }
 }

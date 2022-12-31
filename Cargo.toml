@@ -33,8 +33,7 @@ dirs = "4.0"
 core-foundation = "0.9"
 
 [target.'cfg(windows)'.dependencies]
-winapi = { version = "0.3", features = ["combaseapi", "impl-default", "objbase", "shellapi", "winerror"] }
-widestring = { version = ">= 0.5, <=1.0" }
+windows = { version = "0.43.0", features = ["Win32_UI_Shell"] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.20"

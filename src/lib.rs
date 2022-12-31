@@ -72,6 +72,16 @@ compile_error!(
     "Only Windows, Mac OS, iOS, Linux, *BSD and Haiku and Wasm32 are currently supported"
 );
 
+#[cfg(any(
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "windows"
+))]
+pub(crate) mod common;
+
 use std::convert::TryFrom;
 use std::default::Default;
 use std::fmt::Display;
@@ -337,6 +347,19 @@ impl TargetType {
             Err(Error::new(ErrorKind::InvalidInput, "not an http url"))
         }
     }
+
+    #[cfg(not(target_family = "wasm"))]
+    fn from_file_path(value: &str) -> Result<Self> {
+        let pb = std::path::PathBuf::from(value);
+        let url = url::Url::from_file_path(if pb.is_relative() {
+            std::env::current_dir()?.join(pb)
+        } else {
+            pb
+        })
+        .map_err(|_| Error::new(ErrorKind::InvalidInput, "failed to convert path to url"))?;
+
+        Ok(Self(url))
+    }
 }
 
 impl Deref for TargetType {
@@ -366,21 +389,15 @@ impl TryFrom<&str> for TargetType {
     #[cfg(not(target_family = "wasm"))]
     fn try_from(value: &str) -> Result<Self> {
         match url::Url::parse(value) {
-            Ok(u) => Ok(Self(u)),
-            Err(_) => {
-                // assume it to be a path if url parsing failed
-                let pb = std::path::PathBuf::from(value);
-                let url = url::Url::from_file_path(if pb.is_relative() {
-                    std::env::current_dir()?.join(pb)
+            Ok(u) => {
+                if u.scheme().len() == 1 && cfg!(windows) {
+                    // this can happen in windows that C:\abc.html gets parsed as scheme "C"
+                    Self::from_file_path(value)
                 } else {
-                    pb
-                })
-                .map_err(|_| {
-                    Error::new(ErrorKind::InvalidInput, "failed to convert path to url")
-                })?;
-
-                Ok(Self(url))
+                    Ok(Self(u))
+                }
             }
+            Err(_) => Self::from_file_path(value),
         }
     }
 }

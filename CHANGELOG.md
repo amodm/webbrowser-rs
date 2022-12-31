@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.4] - 2022-12-31 <a name="0.8.4"></a>
+## Fixed
+- Urgent bug fix for windows, where rendering broke on Firefox & Chrome
+
 ## [0.8.3] - 2022-12-30 <a name="0.8.3"></a>
 ## Added
 - Web browser is guaranteed to open for local files even if local file association was to a non-browser app (say an editor). This now is formally
@@ -128,7 +132,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.3...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.4...HEAD
+[0.8.4]: https://github.com/amodm/webbrowser-rs/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/amodm/webbrowser-rs/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/amodm/webbrowser-rs/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/amodm/webbrowser-rs/compare/v0.8.0...v0.8.1

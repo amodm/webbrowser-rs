@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.8.4] - 2022-12-31 <a name="0.8.4"></a>
 ## Fixed
-- Urgent bug fix for windows, where rendering broke on Firefox & Chrome
+- Urgent bug fix for windows, where rendering broke on Firefox & Chrome. See #60
 
 ## [0.8.3] - 2022-12-30 <a name="0.8.3"></a>
 ## Added

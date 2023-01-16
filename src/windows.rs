@@ -30,7 +30,7 @@ pub(super) fn open_browser_internal(
             let cmdline = unsafe {
                 let mut line_len: u32 = 512;
                 AssocQueryStringW(
-                    ASSOCF_IS_PROTOCOL as u32,
+                    ASSOCF_IS_PROTOCOL,
                     ASSOCSTR_COMMAND,
                     w!("http"),
                     PCWSTR::null(),

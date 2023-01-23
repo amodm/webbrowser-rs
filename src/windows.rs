@@ -1,10 +1,22 @@
 use crate::common::{for_each_token, run_command};
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-use log::{error, trace};
+use log::trace;
 use std::process::Command;
-use windows::core::{PCWSTR, PWSTR};
-use windows::w;
-use windows::Win32::UI::Shell::{AssocQueryStringW, ASSOCF_IS_PROTOCOL, ASSOCSTR_COMMAND};
+
+const ASSOCF_IS_PROTOCOL: u32 = 0x00001000;
+const ASSOCSTR_COMMAND: i32 = 1;
+
+#[link(name = "shlwapi")]
+extern "C" {
+    fn AssocQueryStringW(
+        flags: u32,
+        string: i32,
+        association: *const u16,
+        extra: *const u16,
+        out: *mut u16,
+        out_len: *mut u32,
+    ) -> i32;
+}
 
 /// Deal with opening of browsers on Windows.
 ///
@@ -25,23 +37,34 @@ pub(super) fn open_browser_internal(
             }
 
             trace!("trying to figure out default browser command");
-            let mut cmdline_u16 = [0_u16; 512];
-            let pwstr = PWSTR::from_raw((&mut cmdline_u16) as *mut u16);
             let cmdline = unsafe {
-                let mut line_len: u32 = 512;
-                AssocQueryStringW(
+                const BUF_SIZE: usize = 512;
+                let mut cmdline_u16 = [0_u16; BUF_SIZE];
+                let mut line_len = BUF_SIZE as u32;
+                if AssocQueryStringW(
                     ASSOCF_IS_PROTOCOL,
                     ASSOCSTR_COMMAND,
-                    w!("http"),
-                    PCWSTR::null(),
-                    pwstr,
-                    &mut line_len as *mut u32,
-                )
-                .map_err(err_other)?;
+                    [0x68, 0x74, 0x74, 0x70, 0x0].as_ptr(), // http\0
+                    std::ptr::null(),
+                    cmdline_u16.as_mut_ptr(),
+                    &mut line_len,
+                ) != 0
+                {
+                    return Err(Error::new(
+                        ErrorKind::Other,
+                        "failed to get default browser",
+                    ));
+                }
 
-                PCWSTR::from_raw(&cmdline_u16 as *const u16)
-                    .to_string()
-                    .map_err(err_other)?
+                use std::os::windows::ffi::OsStringExt;
+                std::ffi::OsString::from_wide(&cmdline_u16[..(line_len - 1) as usize])
+                    .into_string()
+                    .map_err(|_err| {
+                        Error::new(
+                            ErrorKind::Other,
+                            "The default web browser command contains invalid unicode characters",
+                        )
+                    })?
             };
             trace!("default browser command: {}", &cmdline);
             let mut cmd = get_browser_cmd(&cmdline, target)?;
@@ -52,11 +75,6 @@ pub(super) fn open_browser_internal(
             "Only the default browser is supported on this platform right now",
         )),
     }
-}
-
-fn err_other(err: impl std::fmt::Display) -> Error {
-    error!("failed to get default browser: {}", &err);
-    Error::new(ErrorKind::Other, "failed to get default browser")
 }
 
 /// Given the configured command line `cmdline` in registry, and the given `url`,

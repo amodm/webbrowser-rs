@@ -45,6 +45,19 @@ mod tests {
             fs::write(&lib_rs, new_code).expect("failed to modify src/lib.rs");
             log::debug!("modified src/lib.rs to use {}", url);
 
+            // uninstall previous app version if existing
+            let mut adb_cmd = Command::new("adb");
+            adb_cmd.arg("uninstall").arg("rust.test_android_app");
+            if let Ok(status) = adb_cmd.current_dir(&app_dir).status() {
+                if status.success() {
+                    log::info!("adb uninstall successful");
+                } else {
+                    log::error!("adb uninstall failed");
+                }
+            } else {
+                log::error!("failed to invoke adb uninstall");
+            }
+
             // invoke app in android
             let mut apk_run_cmd = Command::new("cargo");
             apk_run_cmd.arg("apk").arg("run");

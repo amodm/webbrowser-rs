@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.5] - 2022-12-31 <a name="0.8.5"></a>
+## Fixed
+- For Windows platform, removes the `windows` crate dependency, relying on selective FFI bindings instead, thus avoiding the large dependency.
+See #62. Thanks to [@Jake-Shadle](https://github.com/Jake-Shadle).
+
 ## [0.8.4] - 2022-12-31 <a name="0.8.4"></a>
 ## Fixed
 - Urgent bug fix for windows, where rendering broke on Firefox & Chrome. See #60
@@ -132,7 +137,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/amodm/webbrowser-rs/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/amodm/webbrowser-rs/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/amodm/webbrowser-rs/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/amodm/webbrowser-rs/compare/v0.8.1...v0.8.2

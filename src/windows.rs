@@ -7,7 +7,7 @@ const ASSOCF_IS_PROTOCOL: u32 = 0x00001000;
 const ASSOCSTR_COMMAND: i32 = 1;
 
 #[link(name = "shlwapi")]
-extern "C" {
+extern "system" {
     fn AssocQueryStringW(
         flags: u32,
         string: i32,

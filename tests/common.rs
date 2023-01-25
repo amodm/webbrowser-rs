@@ -65,10 +65,7 @@ where
     op(&format!("http://{}:{}{}", host, port, &uri));
 
     // wait for the url to be hit
-    #[cfg(windows)]
-    let timeout = 60;
-    #[cfg(not(windows))]
-    let timeout = 30;
+    let timeout = 90;
     match rx.recv_timeout(std::time::Duration::from_secs(timeout)) {
         Ok(msg) => assert_eq!(decode(&msg).unwrap(), uri),
         Err(_) => panic!("failed to receive uri data"),

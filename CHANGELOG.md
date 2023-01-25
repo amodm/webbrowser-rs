@@ -5,7 +5,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.
 
 ## [0.8.6] - 2022-12-31 <a name="0.8.6"></a>
 ## Fixed
-- For Windows 32-bit, fix ABI to be used, which was broken in v0.8.5. Thanks to [@alula](https://github.com/alula).
+- For Windows 32-bit, fix ABI to be used, which was broken in v0.8.5. Thanks to [@alula](https://github.com/alula). See #62 and #63.
 
 ## [0.8.5] - 2022-12-31 <a name="0.8.5"></a>
 ## Fixed

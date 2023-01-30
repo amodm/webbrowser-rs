@@ -1,5 +1,5 @@
 use actix_files as fs;
-use actix_web::{web::{self, to}, App, HttpRequest, HttpResponse, HttpServer, Responder};
+use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use crossbeam_channel as cbc;
 use rand::RngCore;
 use std::{io::Write, path::PathBuf, sync::Arc};
@@ -29,11 +29,17 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
 
 async fn delayed_response(req: HttpRequest) -> impl Responder {
     let qs = req.query_string();
-    let ms: u64 = qs.replace("ms=", "").parse().expect("failed to parse millis");
+    let ms: u64 = qs
+        .replace("ms=", "")
+        .parse()
+        .expect("failed to parse millis");
     tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
     HttpResponse::Ok()
-            .content_type("text/html; charset=utf-8")
-            .body(format!("<html><body><p>Delayed by {}ms</p></body></html>", qs))
+        .content_type("text/html; charset=utf-8")
+        .body(format!(
+            "<html><body><p>Delayed by {}ms</p></body></html>",
+            qs
+        ))
 }
 
 pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)

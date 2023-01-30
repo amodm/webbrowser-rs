@@ -3,7 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
-## [0.8.6] - 2022-12-31 <a name="0.8.6"></a>
+## [0.8.7] - 2023-01-30 <a name="0.8.7"></a>
+## Fixed
+- Fixes a bug on WSL, when `xdg-settings` executes successfully but returns no default browser name. Thanks to [@krsh732](https://github.com/krsh732). See #64.
+
+## [0.8.6] - 2023-01-26 <a name="0.8.6"></a>
 ## Fixed
 - For Windows 32-bit, fix ABI to be used, which was broken in v0.8.5. Thanks to [@alula](https://github.com/alula). See #62 and #63.
 
@@ -141,7 +145,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.6...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.7...HEAD
+[0.8.7]: https://github.com/amodm/webbrowser-rs/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/amodm/webbrowser-rs/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/amodm/webbrowser-rs/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/amodm/webbrowser-rs/compare/v0.8.3...v0.8.4

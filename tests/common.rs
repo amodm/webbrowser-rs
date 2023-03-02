@@ -44,7 +44,7 @@ async fn delayed_response(req: HttpRequest) -> impl Responder {
 
 pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
 where
-    F: FnOnce(&str),
+    F: FnOnce(&str, u16),
 {
     // initialize env logger
     let _ = env_logger::try_init();
@@ -78,7 +78,7 @@ where
     tokio::spawn(server);
 
     // invoke the op
-    op(&format!("http://{}:{}{}", host, port, &uri));
+    op(&format!("http://{}:{}{}", host, port, &uri), port);
 
     // wait for the url to be hit
     let timeout = 90;
@@ -93,7 +93,7 @@ where
 
 #[allow(dead_code)]
 pub async fn check_request_received(browser: Browser, uri: String) {
-    check_request_received_using(uri, "127.0.0.1", |url| {
+    check_request_received_using(uri, "127.0.0.1", |url, _port| {
         open_browser(browser, url).expect("failed to open browser");
     })
     .await;
@@ -110,7 +110,7 @@ where
     let id = rand::thread_rng().next_u32();
     let pb = html_dir.join(format!("test.{}.html", id));
     let img_uri = format!("{}?r={}", URI_PNG_1PX, id);
-    check_request_received_using(img_uri, "127.0.0.1", |uri| {
+    check_request_received_using(img_uri, "127.0.0.1", |uri, _port| {
         let url = url_op(&pb);
         let mut html_file = std::fs::File::create(&pb).expect("failed to create html file");
         html_file

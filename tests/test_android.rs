@@ -1,7 +1,5 @@
-#[cfg(target_os = "macos")]
 mod common;
 
-#[cfg(target_os = "macos")]
 mod tests {
     const TEST_PLATFORM: &str = "android";
 
@@ -24,8 +22,7 @@ mod tests {
         app_dir.push("tests/test-android-app");
         let uri = format!("/{}", TEST_PLATFORM);
 
-        let ipv4 = get_ipv4_address();
-        check_request_received_using(uri, &ipv4, |url| {
+        check_request_received_using(uri, "127.0.0.1", |url, port| {
             // modify android app code to use the correct url
             let mut lib_rs = PathBuf::from(&app_dir);
             lib_rs.push("src/lib.rs");
@@ -55,8 +52,20 @@ mod tests {
                     log::error!("adb uninstall failed");
                 }
             } else {
-                log::error!("failed to invoke adb uninstall");
+                log::error!("failed to run {:?}", adb_cmd);
             }
+
+            let adb_reverse_port = format!("tcp:{}", port);
+            let mut adb_cmd = Command::new("adb");
+            adb_cmd
+                .arg("reverse")
+                .arg(&adb_reverse_port)
+                .arg(&adb_reverse_port);
+            assert!(
+                adb_cmd.status().expect("Failed to invoke").success(),
+                "Failed to run {:?}",
+                adb_cmd
+            );
 
             // invoke app in android
             let mut apk_run_cmd = Command::new("cargo");
@@ -73,25 +82,12 @@ mod tests {
 
             // check for apk run status
             assert!(
-                apk_run_status.expect("cargo apk failed").success(),
-                "failed to run: cargo apk run"
+                apk_run_status.expect("Failed to invoke").success(),
+                "failed to run {:?}",
+                apk_run_cmd
             );
         })
         .await;
-    }
-
-    fn get_ipv4_address() -> String {
-        let output = Command::new("sh")
-            .arg("-c")
-            .arg("ifconfig | grep 'inet ' | awk '{ print $2 }' | grep -v ^127.0.0")
-            .output()
-            .expect("failed to get non-local ipv4 address");
-        std::str::from_utf8(&output.stdout)
-            .expect("unable to parse output into utf8")
-            .split('\n')
-            .next()
-            .expect("no ip address found")
-            .into()
     }
 
     #[test]

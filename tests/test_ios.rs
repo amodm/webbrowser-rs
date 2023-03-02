@@ -30,7 +30,7 @@ mod tests {
         run_cmd(&glue_dir, "glue code build failed", &["./build"]);
 
         // invoke server
-        check_request_received_using(uri, &ipv4, |url| {
+        check_request_received_using(uri, &ipv4, |url, _port| {
             // modify ios app code to use the correct url
             let mut swift_src = PathBuf::from(&app_dir);
             swift_src.push("test-ios-app/ContentView.swift");

@@ -11,4 +11,3 @@ crate-type = ["lib", "cdylib"]
 jni = "0.19"
 ndk-glue = "0.7"
 webbrowser = { path = "../.." }
-

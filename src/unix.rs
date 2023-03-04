@@ -236,6 +236,9 @@ fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
         .map_err(|_| Error::new(ErrorKind::NotFound, "invalid default browser name"))?
         .trim()
         .to_owned();
+    if browser_name.is_empty() {
+        return Err(Error::new(ErrorKind::NotFound, "no default xdg browser"));
+    }
     trace!("found xdg browser: {:?}", &browser_name);
 
     // search for the config file corresponding to this browser name

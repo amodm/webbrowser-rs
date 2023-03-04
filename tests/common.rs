@@ -27,6 +27,21 @@ async fn log_handler(req: HttpRequest, data: web::Data<AppState>) -> impl Respon
     }
 }
 
+async fn delayed_response(req: HttpRequest) -> impl Responder {
+    let qs = req.query_string();
+    let ms: u64 = qs
+        .replace("ms=", "")
+        .parse()
+        .expect("failed to parse millis");
+    tokio::time::sleep(tokio::time::Duration::from_millis(ms)).await;
+    HttpResponse::Ok()
+        .content_type("text/html; charset=utf-8")
+        .body(format!(
+            "<html><body><p>Delayed by {}ms</p></body></html>",
+            qs
+        ))
+}
+
 pub async fn check_request_received_using<F>(uri: String, host: &str, op: F)
 where
     F: FnOnce(&str),
@@ -45,6 +60,7 @@ where
         let _ = std::fs::create_dir_all(std::path::Path::new(wasm_pkg_dir));
         App::new()
             .service(fs::Files::new("/static/wasm", wasm_pkg_dir))
+            .service(web::scope("/utils").route("/delay", web::get().to(delayed_response)))
             .app_data(web::Data::new(data.clone()))
             .default_service(web::to(log_handler))
     })

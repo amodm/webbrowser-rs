@@ -1,5 +1,5 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-use jni::objects::JValue;
+use jni::objects::{JObject, JValue};
 use std::process::{Command, Stdio};
 
 /// Deal with opening of browsers on Android. Only [Browser::Default] is supported, and
@@ -36,7 +36,7 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
 
     // Create a VM for executing Java calls
     let ctx = ndk_context::android_context();
-    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm() as _) }.map_err(|_| -> Error {
+    let vm = unsafe { jni::JavaVM::from_raw(ctx.vm() as _) }.map_err(|_| {
         Error::new(
             ErrorKind::NotFound,
             "Expected to find JVM via ndk_context crate",
@@ -44,56 +44,54 @@ fn open_browser_default(url: &str, options: &BrowserOptions) -> Result<()> {
     })?;
 
     let activity = unsafe { jni::objects::JObject::from_raw(ctx.context() as _) };
-    let env = vm.attach_current_thread().map_err(|_| -> Error {
-        Error::new(ErrorKind::Other, "Failed to attach current thread")
-    })?;
+    let mut env = vm
+        .attach_current_thread()
+        .map_err(|_| Error::new(ErrorKind::Other, "Failed to attach current thread"))?;
 
     // Create ACTION_VIEW object
     let intent_class = env
         .find_class("android/content/Intent")
-        .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "Failed to find Intent class") })?;
+        .map_err(|_| Error::new(ErrorKind::NotFound, "Failed to find Intent class"))?;
     let action_view = env
-        .get_static_field(intent_class, "ACTION_VIEW", "Ljava/lang/String;")
-        .map_err(|_| -> Error {
-            Error::new(ErrorKind::NotFound, "Failed to get intent.ACTION_VIEW")
-        })?;
+        .get_static_field(&intent_class, "ACTION_VIEW", "Ljava/lang/String;")
+        .map_err(|_| Error::new(ErrorKind::NotFound, "Failed to get intent.ACTION_VIEW"))?;
 
     // Create Uri object
     let uri_class = env
         .find_class("android/net/Uri")
-        .map_err(|_| -> Error { Error::new(ErrorKind::NotFound, "Failed to find Uri class") })?;
+        .map_err(|_| Error::new(ErrorKind::NotFound, "Failed to find Uri class"))?;
     let url = env
         .new_string(url)
-        .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to create JNI string") })?;
+        .map_err(|_| Error::new(ErrorKind::Other, "Failed to create JNI string"))?;
     let uri = env
         .call_static_method(
-            uri_class,
+            &uri_class,
             "parse",
             "(Ljava/lang/String;)Landroid/net/Uri;",
-            &[JValue::Object(*url)],
+            &[JValue::Object(&JObject::from(url))],
         )
-        .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to parse JNI Uri") })?;
+        .map_err(|_| Error::new(ErrorKind::Other, "Failed to parse JNI Uri"))?;
 
     // Create new ACTION_VIEW intent with the uri
     let intent = env
-        .alloc_object(intent_class)
-        .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to allocate intent") })?;
+        .alloc_object(&intent_class)
+        .map_err(|_| Error::new(ErrorKind::Other, "Failed to allocate intent"))?;
     env.call_method(
-        intent,
+        &intent,
         "<init>",
         "(Ljava/lang/String;Landroid/net/Uri;)V",
-        &[action_view, uri],
+        &[action_view.borrow(), uri.borrow()],
     )
-    .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to initialize intent") })?;
+    .map_err(|_| Error::new(ErrorKind::Other, "Failed to initialize intent"))?;
 
     // Start the intent activity.
     env.call_method(
-        activity,
+        &activity,
         "startActivity",
         "(Landroid/content/Intent;)V",
-        &[JValue::Object(intent)],
+        &[JValue::Object(&intent)],
     )
-    .map_err(|_| -> Error { Error::new(ErrorKind::Other, "Failed to start activity") })?;
+    .map_err(|_| Error::new(ErrorKind::Other, "Failed to start activity"))?;
 
     Ok(())
 }

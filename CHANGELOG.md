@@ -3,36 +3,40 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.8] - 2023-01-30 <a name="0.8.8"></a>
+### Changed
+- Android: bumped `jni` dependency version to `0.21`
+
 ## [0.8.7] - 2023-01-30 <a name="0.8.7"></a>
-## Fixed
+### Fixed
 - Fixes a bug on WSL, when `xdg-settings` executes successfully but returns no default browser name. Thanks to [@krsh732](https://github.com/krsh732). See #64.
 
 ## [0.8.6] - 2023-01-26 <a name="0.8.6"></a>
-## Fixed
+### Fixed
 - For Windows 32-bit, fix ABI to be used, which was broken in v0.8.5. Thanks to [@alula](https://github.com/alula). See #62 and #63.
 
 ## [0.8.5] - 2022-12-31 <a name="0.8.5"></a>
-## Fixed
+### Fixed
 - For Windows platform, removes the `windows` crate dependency, relying on selective FFI bindings instead, thus avoiding the large dependency.
 See #62. Thanks to [@Jake-Shadle](https://github.com/Jake-Shadle).
 
 ## [0.8.4] - 2022-12-31 <a name="0.8.4"></a>
-## Fixed
+### Fixed
 - Urgent bug fix for windows, where rendering broke on Firefox & Chrome. See #60
 
 ## [0.8.3] - 2022-12-30 <a name="0.8.3"></a>
-## Added
+### Added
 - Web browser is guaranteed to open for local files even if local file association was to a non-browser app (say an editor). This now is formally
 incorporated as part of this crate's [Consistent Behaviour](https://github.com/amodm/webbrowser-rs/blob/main/README.md#consistent-behaviour)
 - WSL support, thanks to [@Nachtalb](https://github.com/Nachtalb). This works even if `wslu` is not installed in WSL environments.
 - A new feature `hardened` now available for applications which require only http(s) urls to be opened. This acts as a security feature.
 
-## Changed
+### Changed
 - On macOS, we now use `CoreFoundation` library instead of `open` command.
 - On Linux/*BSD, we now parse xdg configuration to execute the command directly, instead of using `xdg-open` command. This allows us to open the
 browser for local html files, even if the `.html` extension was associated with an edit (see #55)
 
-## Fixed
+### Fixed
 - The guarantee of web browser being opened (instead of local file association), now solves for the scenario where the URL is crafted to be an
 executable. This was reported privately by [@offalltn](https://github.com/offalltn).
 
@@ -145,7 +149,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.7...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.8...HEAD
+[0.8.8]: https://github.com/amodm/webbrowser-rs/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/amodm/webbrowser-rs/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/amodm/webbrowser-rs/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/amodm/webbrowser-rs/compare/v0.8.4...v0.8.5

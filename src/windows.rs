@@ -1,6 +1,7 @@
 use crate::common::{for_each_token, run_command};
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use log::trace;
+use std::path::Path;
 use std::process::Command;
 
 const ASSOCF_IS_PROTOCOL: u32 = 0x00001000;

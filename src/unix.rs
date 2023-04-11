@@ -72,6 +72,8 @@ fn open_browser_default(target: &TargetType, options: &BrowserOptions) -> Result
 
             "wsl" => try_wsl(options, target),
 
+            "flatpak" => try_flatpak(options, target),
+
             _ => Err(r),
         })
         // at the end, we'll try x-www-browser and return the result as is
@@ -144,6 +146,14 @@ fn is_wsl() -> bool {
     }
 }
 
+/// Check if we're running inside Flatpak
+#[inline]
+fn is_flatpak() -> bool {
+    std::env::var("container")
+        .map(|x| x.eq_ignore_ascii_case("flatpak"))
+        .unwrap_or(false)
+}
+
 /// Detect the desktop environment
 fn guess_desktop_env() -> &'static str {
     let unknown = "unknown";
@@ -154,7 +164,9 @@ fn guess_desktop_env() -> &'static str {
         .unwrap_or_else(|_| unknown.into())
         .to_ascii_lowercase();
 
-    if xcd.contains("gnome") || xcd.contains("cinnamon") || dsession.contains("gnome") {
+    if is_flatpak() {
+        "flatpak"
+    } else if xcd.contains("gnome") || xcd.contains("cinnamon") || dsession.contains("gnome") {
         // GNOME and its derivatives
         "gnome"
     } else if xcd.contains("kde")
@@ -204,6 +216,22 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
             run_command(&mut cmd, true, options)
         }
         _ => Err(Error::new(ErrorKind::NotFound, "invalid browser")),
+    }
+}
+
+/// Open browser in Flatpak environments
+fn try_flatpak(options: &BrowserOptions, target: &TargetType) -> Result<()> {
+    match target.0.scheme() {
+        "http" | "https" => {
+            let url: &str = target;
+            // we assume xdg-open to be present, given that it's a part of standard
+            // runtime & SDK of flatpak
+            try_browser!(options, "xdg-open", url)
+        }
+        // we support only http urls under Flatpak to adhere to the defined
+        // Consistent Behaviour, as effectively DBUS is used interally, and
+        // there doesn't seem to be a way for us to determine actual browser
+        _ => Err(Error::new(ErrorKind::NotFound, "only http urls supported")),
     }
 }
 

@@ -3,6 +3,13 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.9] - 2023-04-12 <a name="0.8.9"></a>
+### Added
+- Linux: add support for running under Flatpak sandboxes. See issue #67 and PR #70
+
+### Fixed
+- Windows: fix a bug where browser command parsing failed. See issue #68 and PR #69
+
 ## [0.8.8] - 2023-01-30 <a name="0.8.8"></a>
 ### Changed
 - Android: bumped `jni` dependency version to `0.21`
@@ -149,7 +156,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.8...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.9...HEAD
+[0.8.9]: https://github.com/amodm/webbrowser-rs/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/amodm/webbrowser-rs/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/amodm/webbrowser-rs/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/amodm/webbrowser-rs/compare/v0.8.5...v0.8.6

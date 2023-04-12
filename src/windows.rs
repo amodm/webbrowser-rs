@@ -1,6 +1,7 @@
 use crate::common::{for_each_token, run_command};
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use log::trace;
+use std::path::Path;
 use std::process::Command;
 
 const ASSOCF_IS_PROTOCOL: u32 = 0x00001000;
@@ -67,6 +68,7 @@ pub(super) fn open_browser_internal(
                     })?
             };
             trace!("default browser command: {}", &cmdline);
+            let cmdline = ensure_cmd_quotes(&cmdline);
             let mut cmd = get_browser_cmd(&cmdline, target)?;
             run_command(&mut cmd, true, options)
         }
@@ -75,6 +77,32 @@ pub(super) fn open_browser_internal(
             "Only the default browser is supported on this platform right now",
         )),
     }
+}
+
+/// It seems that sometimes browser exe paths which have spaces are not quoted, so we keep going over
+/// each token, until we encounter what looks like a valid exe.
+///
+/// See https://github.com/amodm/webbrowser-rs/issues/68
+fn ensure_cmd_quotes(cmdline: &str) -> String {
+    if !cmdline.starts_with('"') {
+        let mut end = 0;
+        for (idx, ch) in cmdline.char_indices() {
+            if ch == ' ' {
+                // does the path till now look like a valid exe?
+                let potential_exe = Path::new(&cmdline[..idx]);
+                if potential_exe.exists() {
+                    end = idx;
+                    break;
+                }
+            }
+        }
+        if end > 0 {
+            return format!("\"{}\"{}", &cmdline[..end], &cmdline[end..]);
+        }
+    }
+
+    // else we default to returning the original cmdline
+    cmdline.to_string()
 }
 
 /// Given the configured command line `cmdline` in registry, and the given `url`,

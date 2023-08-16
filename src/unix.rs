@@ -200,14 +200,14 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
                 "cmd.exe",
                 "/c",
                 "start",
-                url.replace("^", "^^").replace("&", "^&")
+                url.replace('^', "^^").replace('&', "^&")
             )
             .or_else(|_| {
                 try_browser!(
                     options,
                     "powershell.exe",
                     "Start",
-                    url.replace("&", "\"&\"")
+                    url.replace('&', "\"&\"")
                 )
             })
             .or_else(|_| try_browser!(options, "wsl-open", url))

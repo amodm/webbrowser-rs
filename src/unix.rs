@@ -195,9 +195,22 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
     match target.0.scheme() {
         "http" | "https" => {
             let url: &str = target;
-            try_browser!(options, "cmd.exe", "/c", "start", url)
-                .or_else(|_| try_browser!(options, "powershell.exe", "Start", url))
-                .or_else(|_| try_browser!(options, "wsl-open", url))
+            try_browser!(
+                options,
+                "cmd.exe",
+                "/c",
+                "start",
+                url.replace("^", "^^").replace("&", "^&")
+            )
+            .or_else(|_| {
+                try_browser!(
+                    options,
+                    "powershell.exe",
+                    "Start",
+                    url.replace("&", "\"&\"")
+                )
+            })
+            .or_else(|_| try_browser!(options, "wsl-open", url))
         }
         #[cfg(all(
             target_os = "linux",

@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.11] - 2023-08-17 <a name="0.8.11"></a>
+### Fixed
+- WSL: handle `&` in URL correctly in WSL environment. See issue #73 and PR #74
+
 ## [0.8.10] - 2023-04-12 <a name="0.8.10"></a>
 ### Changed
 - Linux: move to `home` as a dependency, instead of `dirs`
@@ -160,7 +164,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.10...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.11...HEAD
+[0.8.11]: https://github.com/amodm/webbrowser-rs/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/amodm/webbrowser-rs/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/amodm/webbrowser-rs/compare/v0.8.8...v0.8.9
 [0.8.8]: https://github.com/amodm/webbrowser-rs/compare/v0.8.7...v0.8.8

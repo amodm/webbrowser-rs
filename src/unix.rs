@@ -82,7 +82,7 @@ fn open_browser_default(target: &TargetType, options: &BrowserOptions) -> Result
         .map_err(|_| {
             Error::new(
                 ErrorKind::NotFound,
-                "No valid browsers detected. You can specify one in BROWSERS environment variable",
+                "No valid browsers detected. You can specify one in BROWSER environment variable",
             )
         })
         // and convert a successful result into a ()

@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.12] - 2023-10-11 <a name="0.8.12"></a>
+### Fixed
+- Linux: fix message about BROWSER env variable. See PR #76
+
 ## [0.8.11] - 2023-08-17 <a name="0.8.11"></a>
 ### Fixed
 - WSL: handle `&` in URL correctly in WSL environment. See issue #73 and PR #74
@@ -164,7 +168,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.11...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.12...HEAD
+[0.8.12]: https://github.com/amodm/webbrowser-rs/compare/v0.8.11...v0.8.12
 [0.8.11]: https://github.com/amodm/webbrowser-rs/compare/v0.8.10...v0.8.11
 [0.8.10]: https://github.com/amodm/webbrowser-rs/compare/v0.8.9...v0.8.10
 [0.8.9]: https://github.com/amodm/webbrowser-rs/compare/v0.8.8...v0.8.9

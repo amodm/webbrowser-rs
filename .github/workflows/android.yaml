@@ -66,12 +66,19 @@ jobs:
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
 
-      # Pre-build
+      # Compile test app
       - name: Compile
-        run: rustup run ${{ matrix.rust }} cargo apk build --target ${{ env.ANDROID_TARGET }}
-        working-directory: tests/test-android-app
-      - name: Compile tests
-        run: rustup run ${{ matrix.rust }} cargo build --test test_android
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          arch: ${{ env.ANDROID_ARCH }}
+          api-level: ${{ matrix.api-level }}
+          ndk: ${{ matrix.ndk-version }}
+          cmake: ${{ matrix.cmake-version }}
+          force-avd-creation: false
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          disable-animations: true
+          working-directory: tests/test-android-app
+          script: bash -c 'ANDROID_TARGET=${{ env.ANDROID_TARGET }} ANDROID_NDK_ROOT=$ANDROID_SDK_ROOT/ndk/${{ matrix.ndk-version }} rustup run ${{ matrix.rust }} cargo apk build --target ${{ env.ANDROID_TARGET }}'
 
       # Run tests on emulator
       - name: Run tests

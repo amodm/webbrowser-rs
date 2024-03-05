@@ -23,6 +23,7 @@
 //! | ios      | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
 //! | haiku    | ✅ (experimental) | default only | ❌ |
+//! | aix      | ✅ (experimental) | default only | ❌ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -46,6 +47,7 @@
 #[cfg_attr(windows, path = "windows.rs")]
 #[cfg_attr(
     any(
+        target_os = "aix",
         target_os = "linux",
         target_os = "freebsd",
         target_os = "netbsd",
@@ -57,6 +59,7 @@
 mod os;
 
 #[cfg(not(any(
+    target_os = "aix",
     target_os = "android",
     target_os = "windows",
     target_os = "macos",
@@ -69,10 +72,11 @@ mod os;
     target_arch = "wasm32"
 )))]
 compile_error!(
-    "Only Windows, Mac OS, iOS, Linux, *BSD and Haiku and Wasm32 are currently supported"
+    "Only Windows, Mac OS, iOS, Linux, *BSD, Haiku, AIX and Wasm32 are currently supported"
 );
 
 #[cfg(any(
+    target_os = "aix",
     target_os = "linux",
     target_os = "freebsd",
     target_os = "netbsd",

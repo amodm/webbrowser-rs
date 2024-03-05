@@ -331,7 +331,7 @@ fn open_using_xdg_config(config_path: &PathBuf, options: &BrowserOptions, url: &
 
     // we capture important keys under the [Desktop Entry] section, as defined under:
     // https://specifications.freedesktop.org/desktop-entry-spec/latest/ar01s06.html
-    for line in BufReader::new(file).lines().flatten() {
+    for line in BufReader::new(file).lines().map_while(Result::ok) {
         if line == "[Desktop Entry]" {
             in_desktop_entry = true;
         } else if line.starts_with('[') {

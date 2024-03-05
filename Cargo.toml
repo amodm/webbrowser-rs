@@ -24,7 +24,7 @@ hardened = []
 disable-wsl = []
 wasm-console = ["web-sys/console"]
 
-[target.'cfg(any(target_os = "linux", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd", target_os = "haiku"))'.dependencies]
+[target.'cfg(any(target_os = "aix", target_os = "linux", target_os = "freebsd", target_os = "netbsd", target_os = "openbsd", target_os = "haiku"))'.dependencies]
 home = "0.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]

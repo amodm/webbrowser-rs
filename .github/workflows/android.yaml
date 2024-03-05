@@ -46,13 +46,6 @@ jobs:
         if: steps.cargo-apk-cache.outputs.cache-hit != 'true'
         run: cargo install cargo-apk --version ${{ env.CARGO_APK_VERSION }}
 
-      # Pre-build
-      - name: Compile
-        run: rustup run ${{ matrix.rust }} cargo apk build --target ${{ env.ANDROID_TARGET }}
-        working-directory: tests/test-android-app
-      - name: Compile tests
-        run: rustup run ${{ matrix.rust }} cargo build --test test_android
-
       # Check if AVD is in cache, else create AVD
       - name: AVD cache
         uses: actions/cache@v3
@@ -72,6 +65,13 @@ jobs:
           emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
           disable-animations: false
           script: echo "Generated AVD snapshot for caching."
+
+      # Pre-build
+      - name: Compile
+        run: rustup run ${{ matrix.rust }} cargo apk build --target ${{ env.ANDROID_TARGET }}
+        working-directory: tests/test-android-app
+      - name: Compile tests
+        run: rustup run ${{ matrix.rust }} cargo build --test test_android
 
       # Run tests on emulator
       - name: Run tests

@@ -41,6 +41,7 @@ if webbrowser::open("http://github.com").is_ok() {
 | ios      | ✅        | default only | ✅ |
 | wasm     | ✅        | default only | ✅ |
 | haiku    | ✅ (experimental) | default only | ❌ |
+| aix      | ✅ (experimental) | default only | ❌ |
 
 ## Consistent Behaviour
 `webbrowser` defines consistent behaviour on all platforms as follows:

@@ -24,6 +24,7 @@
 //! | wasm     | ✅        | default only | ✅ |
 //! | haiku    | ✅ (experimental) | default only | ❌ |
 //! | aix      | ✅ (experimental) | default only | ❌ |
+//! | illumos  | ✅ (experimental) | default only | ❌ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -52,7 +53,8 @@
         target_os = "freebsd",
         target_os = "netbsd",
         target_os = "openbsd",
-        target_os = "haiku"
+        target_os = "haiku",
+        target_os = "illumos"
     ),
     path = "unix.rs"
 )]
@@ -68,11 +70,12 @@ mod os;
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
+    target_os = "illumos",
     target_os = "ios",
     target_arch = "wasm32"
 )))]
 compile_error!(
-    "Only Windows, Mac OS, iOS, Linux, *BSD, Haiku, AIX and Wasm32 are currently supported"
+    "Only Windows, Mac OS, iOS, Linux, *BSD, Haiku, AIX, illumos and Wasm32 are currently supported"
 );
 
 #[cfg(any(
@@ -82,6 +85,7 @@ compile_error!(
     target_os = "netbsd",
     target_os = "openbsd",
     target_os = "haiku",
+    target_os = "illumos",
     target_os = "windows"
 ))]
 pub(crate) mod common;

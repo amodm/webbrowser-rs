@@ -90,8 +90,6 @@ compile_error!(
 ))]
 pub(crate) mod common;
 
-use std::convert::TryFrom;
-use std::default::Default;
 use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
 use std::ops::Deref;
@@ -156,7 +154,7 @@ impl error::Error for ParseBrowserError {
     }
 }
 
-impl Default for Browser {
+impl std::default::Default for Browser {
     fn default() -> Self {
         Browser::Default
     }
@@ -240,6 +238,10 @@ impl BrowserOptions {
     /// Hint to the browser to open the url in the corresponding
     /// [target](https://www.w3schools.com/tags/att_a_target.asp). Note that this is just
     /// a hint, it may or may not be honoured (currently guaranteed only in wasm).
+
+    // TODO:remove this lint suppression once we're past the MSRV of 1.63 as that's when
+    // clone_into() became stable.
+    #[allow(clippy::all)]
     pub fn with_target_hint(&mut self, target_hint: &str) -> &mut Self {
         self.target_hint = target_hint.to_owned();
         self
@@ -384,7 +386,7 @@ impl Display for TargetType {
     }
 }
 
-impl TryFrom<&str> for TargetType {
+impl std::convert::TryFrom<&str> for TargetType {
     type Error = Error;
 
     #[cfg(target_family = "wasm")]

@@ -204,7 +204,6 @@ const DEFAULT_BROWSER_URL: &str = "file:///Applications/Safari.app/";
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::convert::TryFrom;
 
     #[test]
     fn open_non_existing_browser() {

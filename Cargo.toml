@@ -9,7 +9,8 @@ repository = "https://github.com/amodm/webbrowser-rs"
 readme = "README.md"
 keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
-edition = "2018"
+edition = "2021"
+rust-version = "1.60"
 
 [dependencies]
 log = "0.4"

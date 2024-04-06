@@ -3,6 +3,12 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [0.8.14] - 2024-04-06 <a name="0.8.14"></a>
+### Added
+- Illumos: experimental support. See PR #82
+### Fixed
+- Previously configured MSRV was stale (i.e. wouldn't have compiled), and has been modified to 1.60. This is being treated as bug, and as such not requiring a major release.
+
 ## [0.8.13] - 2024-03-05 <a name="0.8.13"></a>
 ### Added
 - AIX: experimental support. See PR #79
@@ -172,7 +178,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.13...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.14...HEAD
+[0.8.14]: https://github.com/amodm/webbrowser-rs/compare/v0.8.13...v0.8.14
 [0.8.13]: https://github.com/amodm/webbrowser-rs/compare/v0.8.12...v0.8.13
 [0.8.12]: https://github.com/amodm/webbrowser-rs/compare/v0.8.11...v0.8.12
 [0.8.11]: https://github.com/amodm/webbrowser-rs/compare/v0.8.10...v0.8.11

@@ -23,15 +23,20 @@ pub(super) fn open_browser_internal(
                 "UIApplication is null, can't open url",
             ));
         }
-        let url_cstr = std::ffi::CString::new(url).unwrap();
+
+        let url_cstr = std::ffi::CString::new(url)?;
+
         // Create ns string class from our string
         let url_string: *mut Object = msg_send![class!(NSString), stringWithUTF8String: url_cstr];
         // Create NSURL object with given string
         let url_object: *mut Object = msg_send![class!(NSURL), URLWithString: url_string];
         // No completion handler
-        let null_ptr = std::ptr::null_mut::<Object>();
+        let nil: *mut Object = ::core::ptr::null_mut();
+        // empty options dictionary
+        let no_options: *mut Object = msg_send![class!(NSDictionary), new];
+
         // Open url
-        let () = msg_send![app, openURL: url_object options: {} completionHandler: null_ptr];
+        let () = msg_send![app, openURL:url_object options:no_options completionHandler:nil];
         Ok(())
     }
 }

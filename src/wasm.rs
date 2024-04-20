@@ -12,7 +12,7 @@ pub(super) fn open_browser_internal(
 
     // always return true for a dry run
     if options.dry_run {
-        if let Some(_) = web_sys::window() {
+        if web_sys::window().is_some() {
             return Ok(());
         } else {
             return Err(Error::new(ErrorKind::Other, "no browser window available"));

@@ -18,13 +18,11 @@
 //! |----------|-----------|----------|-------------|
 //! | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
 //! | windows  | ✅        | default only | ✅ |
-//! | linux/wsl/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
+//! | linux/wsl | ✅       | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 //! | android  | ✅        | default only | ✅ |
 //! | ios      | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
-//! | haiku    | ✅ (experimental) | default only | ❌ |
-//! | aix      | ✅ (experimental) | default only | ❌ |
-//! | illumos  | ✅ (experimental) | default only | ❌ |
+//! | unix (*bsd, aix etc.) | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | Manual |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -47,46 +45,33 @@
 #[cfg_attr(target_family = "wasm", path = "wasm.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
 #[cfg_attr(
-    any(
-        target_os = "aix",
-        target_os = "linux",
-        target_os = "freebsd",
-        target_os = "netbsd",
-        target_os = "openbsd",
-        target_os = "haiku",
-        target_os = "illumos"
+    all(
+        unix,
+        not(any(
+            target_os = "ios",
+            target_os = "tvos",
+            target_os = "macos",
+            target_os = "android",
+            target_family = "wasm",
+            windows,
+        )),
     ),
     path = "unix.rs"
 )]
 mod os;
 
-#[cfg(not(any(
-    target_os = "aix",
-    target_os = "android",
-    target_os = "windows",
-    target_os = "macos",
-    target_os = "linux",
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "haiku",
-    target_os = "illumos",
-    target_os = "ios",
-    target_arch = "wasm32"
-)))]
-compile_error!(
-    "Only Windows, Mac OS, iOS, Linux, *BSD, Haiku, AIX, illumos and Wasm32 are currently supported"
-);
-
 #[cfg(any(
-    target_os = "aix",
-    target_os = "linux",
-    target_os = "freebsd",
-    target_os = "netbsd",
-    target_os = "openbsd",
-    target_os = "haiku",
-    target_os = "illumos",
-    target_os = "windows"
+    windows,
+    all(
+        unix,
+        not(any(
+            target_os = "ios",
+            target_os = "tvos",
+            target_os = "macos",
+            target_os = "android",
+            target_family = "wasm",
+        )),
+    ),
 ))]
 pub(crate) mod common;
 
@@ -328,7 +313,19 @@ pub fn open_browser_with_options(
         ));
     }
 
-    os::open_browser_internal(browser, &target, options)
+    if cfg!(any(
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "macos",
+        target_os = "android",
+        target_family = "wasm",
+        windows,
+        unix,
+    )) {
+        os::open_browser_internal(browser, &target, options)
+    } else {
+        Err(Error::new(ErrorKind::NotFound, "unsupported platform"))
+    }
 }
 
 /// The link we're trying to open, represented as a URL. Local files get represented

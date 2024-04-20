@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2024-04-20 <a name="1.0.0"></a>
+### Added
+- Move to 1.0! MSRV has now been defined too.
+
+### Fixed
+- Unix: default to standard unix implementation, instead of whitelisting each flavour of unix
+- WASM: return an error on dry_run if window object isn't available
+
 ## [0.8.15] - 2024-04-10 <a name="0.8.15"></a>
 ### Fixed
 - Fix crash on iOS. See #83 and #84
@@ -182,7 +190,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v0.8.15...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/amodm/webbrowser-rs/compare/v0.8.15...v1.0.0
 [0.8.15]: https://github.com/amodm/webbrowser-rs/compare/v0.8.14...v0.8.15
 [0.8.14]: https://github.com/amodm/webbrowser-rs/compare/v0.8.13...v0.8.14
 [0.8.13]: https://github.com/amodm/webbrowser-rs/compare/v0.8.12...v0.8.13

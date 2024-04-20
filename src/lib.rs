@@ -44,7 +44,7 @@
 #[cfg_attr(any(target_os = "ios", target_os = "tvos"), path = "ios.rs")]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "android", path = "android.rs")]
-#[cfg_attr(target_arch = "wasm32", path = "wasm.rs")]
+#[cfg_attr(target_family = "wasm", path = "wasm.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
 #[cfg_attr(
     any(

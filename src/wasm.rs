@@ -12,7 +12,11 @@ pub(super) fn open_browser_internal(
 
     // always return true for a dry run
     if options.dry_run {
-        return Ok(());
+        if let Some(_) = web_sys::window() {
+            return Ok(());
+        } else {
+            return Err(Error::new(ErrorKind::Other, "no browser window available"));
+        }
     }
 
     let window = web_sys::window();
@@ -30,10 +34,7 @@ pub(super) fn open_browser_internal(
                 Err(Error::new(ErrorKind::Other, "error opening url"))
             }
         },
-        None => Err(Error::new(
-            ErrorKind::Other,
-            "should have a window in this context",
-        )),
+        None => Err(Error::new(ErrorKind::Other, "no browser window available")),
     }
 }
 

@@ -8,7 +8,7 @@ mod tests {
     use super::common::check_request_received_using;
     use std::fs;
     use std::path::PathBuf;
-    use std::process::{Command, Stdio};
+    use std::process::{Command, ExitStatus, Stdio};
     use webbrowser::Browser;
 
     // to run this test, run it as:
@@ -27,7 +27,7 @@ mod tests {
         // build test glue code
         let mut glue_dir = PathBuf::from(&app_dir);
         glue_dir.push("testglue");
-        run_cmd(&glue_dir, "glue code build failed", &["./build"]);
+        run_cmd(&glue_dir, &["./build"]).expect("glue code build failed");
 
         // invoke server
         check_request_received_using(uri, &ipv4, |url, _port| {
@@ -48,42 +48,58 @@ mod tests {
                 .collect::<Vec<String>>()
                 .join("\n");
             fs::write(&swift_src, new_code).expect("failed to modify ContentView.swift");
+            let revert_code = || fs::write(&swift_src, &old_code).expect("failed to revert code");
+            let handle_exec_result = |result: std::io::Result<ExitStatus>, err_msg: &str| {
+                revert_code();
+                let success = match result {
+                    Ok(status) => status.success(),
+                    Err(_) => false,
+                };
+                if !success {
+                    eprintln!("{err_msg}");
+                    std::process::exit(1);
+                }
+            };
 
             // build app
-            run_cmd(
+            let exec_result = run_cmd(
                 &app_dir,
-                "failed to build ios app",
                 &[
                     "xcrun",
                     "xcodebuild",
                     "-project",
                     "test-ios-app.xcodeproj",
-                    "-scheme",
-                    "test-ios-app",
                     "-configuration",
                     "Debug",
+                    "-sdk",
+                    "iphonesimulator",
                     "-destination",
                     "platform=iOS Simulator,name=iphone-latest",
-                    "-derivedDataPath",
-                    "build",
+                    "-arch",
+                    if cfg!(target_arch = "aarch64") {
+                        "arm64"
+                    } else {
+                        "x86_64"
+                    },
                 ],
             );
+            handle_exec_result(exec_result, "failed to build ios app");
 
             // launch app on simulator
-            run_cmd(
+            let exec_result = run_cmd(
                 &app_dir,
-                "failed to install app on simulator",
                 &[
                     "xcrun",
                     "simctl",
                     "install",
                     "booted",
-                    "build/Build/Products/Debug-iphonesimulator/test-ios-app.app",
+                    "build/Debug-iphonesimulator/test-ios-app.app",
                 ],
             );
-            run_cmd(
+            handle_exec_result(exec_result, "failed to install app on simulator");
+
+            let exec_result = run_cmd(
                 &app_dir,
-                "failed to launch app on simulator",
                 &[
                     "xcrun",
                     "simctl",
@@ -92,9 +108,10 @@ mod tests {
                     "in.rootnet.webbrowser.test-ios-app",
                 ],
             );
+            handle_exec_result(exec_result, "failed to launch app on simulator");
 
             // revert to the old code
-            fs::write(&swift_src, &old_code).expect("failed to modify ContentView.swift");
+            revert_code();
         })
         .await;
     }
@@ -118,13 +135,12 @@ mod tests {
         assert!(Browser::is_available(), "should have found a browser");
     }
 
-    fn run_cmd(app_dir: &PathBuf, failure_msg: &str, args: &[&str]) {
-        let _ = Command::new(args[0])
+    fn run_cmd(app_dir: &PathBuf, args: &[&str]) -> std::io::Result<ExitStatus> {
+        Command::new(args[0])
             .args(&args[1..])
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit())
             .current_dir(app_dir)
             .status()
-            .expect(failure_msg);
     }
 }

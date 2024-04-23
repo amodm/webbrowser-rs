@@ -1,7 +1,9 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use objc::{class, msg_send, runtime::Object, sel, sel_impl};
 
-/// Deal with opening of browsers on iOS
+/// Deal with opening of browsers on iOS/tvOS/visionOS.
+///
+/// watchOS doesn't have a browser, so this won't work there.
 pub(super) fn open_browser_internal(
     _browser: Browser,
     target: &TargetType,

@@ -18,11 +18,12 @@
 //! |----------|-----------|----------|-------------|
 //! | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
 //! | windows  | ✅        | default only | ✅ |
-//! | linux/wsl | ✅       | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
+//! | linux/wsl/*bsd  | ✅     | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 //! | android  | ✅        | default only | ✅ |
 //! | ios      | ✅        | default only | ✅ |
 //! | wasm     | ✅        | default only | ✅ |
-//! | unix (*bsd, aix etc.) | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | Manual |
+//! | haiku    | ✅ (experimental) | default only | ❌ |
+//! | aix      | ✅ (experimental) | default only | ❌ |
 //!
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
@@ -39,42 +40,57 @@
 //! * `disable-wsl` - this disables WSL `file` implementation (`http` still works)
 //! * `wasm-console` - this enables logging to wasm console (valid only on wasm platform)
 
-#[cfg_attr(any(target_os = "ios", target_os = "tvos"), path = "ios.rs")]
+#[cfg_attr(target_os = "ios", path = "ios.rs")]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "android", path = "android.rs")]
-#[cfg_attr(target_family = "wasm", path = "wasm.rs")]
+#[cfg_attr(target_arch = "wasm32", path = "wasm.rs")]
 #[cfg_attr(windows, path = "windows.rs")]
 #[cfg_attr(
-    all(
-        unix,
-        not(any(
-            target_os = "ios",
-            target_os = "tvos",
-            target_os = "macos",
-            target_os = "android",
-            target_family = "wasm",
-            windows,
-        )),
+    any(
+        target_os = "aix",
+        target_os = "linux",
+        target_os = "freebsd",
+        target_os = "netbsd",
+        target_os = "openbsd",
+        target_os = "nto",
+        target_os = "haiku"
     ),
     path = "unix.rs"
 )]
 mod os;
 
+#[cfg(not(any(
+    target_os = "aix",
+    target_os = "android",
+    target_os = "windows",
+    target_os = "macos",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "nto",
+    target_os = "ios",
+    target_arch = "wasm32"
+)))]
+compile_error!(
+    "Only Windows, Mac OS, iOS, Linux, *BSD, Haiku, AIX and Wasm32 are currently supported"
+);
+
 #[cfg(any(
-    windows,
-    all(
-        unix,
-        not(any(
-            target_os = "ios",
-            target_os = "tvos",
-            target_os = "macos",
-            target_os = "android",
-            target_family = "wasm",
-        )),
-    ),
+    target_os = "aix",
+    target_os = "linux",
+    target_os = "freebsd",
+    target_os = "netbsd",
+    target_os = "openbsd",
+    target_os = "haiku",
+    target_os = "nto",
+    target_os = "windows"
 ))]
 pub(crate) mod common;
 
+use std::convert::TryFrom;
+use std::default::Default;
 use std::fmt::Display;
 use std::io::{Error, ErrorKind, Result};
 use std::ops::Deref;
@@ -139,7 +155,7 @@ impl error::Error for ParseBrowserError {
     }
 }
 
-impl std::default::Default for Browser {
+impl Default for Browser {
     fn default() -> Self {
         Browser::Default
     }
@@ -223,10 +239,6 @@ impl BrowserOptions {
     /// Hint to the browser to open the url in the corresponding
     /// [target](https://www.w3schools.com/tags/att_a_target.asp). Note that this is just
     /// a hint, it may or may not be honoured (currently guaranteed only in wasm).
-
-    // TODO:remove this lint suppression once we're past the MSRV of 1.63 as that's when
-    // clone_into() became stable.
-    #[allow(clippy::all)]
     pub fn with_target_hint(&mut self, target_hint: &str) -> &mut Self {
         self.target_hint = target_hint.to_owned();
         self
@@ -313,19 +325,7 @@ pub fn open_browser_with_options(
         ));
     }
 
-    if cfg!(any(
-        target_os = "ios",
-        target_os = "tvos",
-        target_os = "macos",
-        target_os = "android",
-        target_family = "wasm",
-        windows,
-        unix,
-    )) {
-        os::open_browser_internal(browser, &target, options)
-    } else {
-        Err(Error::new(ErrorKind::NotFound, "unsupported platform"))
-    }
+    os::open_browser_internal(browser, &target, options)
 }
 
 /// The link we're trying to open, represented as a URL. Local files get represented
@@ -383,7 +383,7 @@ impl Display for TargetType {
     }
 }
 
-impl std::convert::TryFrom<&str> for TargetType {
+impl TryFrom<&str> for TargetType {
     type Error = Error;
 
     #[cfg(target_family = "wasm")]

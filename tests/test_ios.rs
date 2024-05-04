@@ -29,6 +29,31 @@ mod tests {
         glue_dir.push("testglue");
         run_cmd(&glue_dir, &["./build"]).expect("glue code build failed");
 
+        let compile_app = || {
+            run_cmd(
+                &app_dir,
+                &[
+                    "xcrun",
+                    "xcodebuild",
+                    "-project",
+                    "test-ios-app.xcodeproj",
+                    "-configuration",
+                    "Debug",
+                    "-sdk",
+                    "iphonesimulator",
+                    "-destination",
+                    "platform=iOS Simulator,name=iphone-latest",
+                    "-arch",
+                    if cfg!(target_arch = "aarch64") {
+                        "arm64"
+                    } else {
+                        "x86_64"
+                    },
+                ],
+            )
+        };
+        compile_app().expect("compilation warm up failed for the app");
+
         // invoke server
         check_request_received_using(uri, &ipv4, |url, _port| {
             // modify ios app code to use the correct url
@@ -62,27 +87,7 @@ mod tests {
             };
 
             // build app
-            let exec_result = run_cmd(
-                &app_dir,
-                &[
-                    "xcrun",
-                    "xcodebuild",
-                    "-project",
-                    "test-ios-app.xcodeproj",
-                    "-configuration",
-                    "Debug",
-                    "-sdk",
-                    "iphonesimulator",
-                    "-destination",
-                    "platform=iOS Simulator,name=iphone-latest",
-                    "-arch",
-                    if cfg!(target_arch = "aarch64") {
-                        "arm64"
-                    } else {
-                        "x86_64"
-                    },
-                ],
-            );
+            let exec_result = compile_app();
             handle_exec_result(exec_result, "failed to build ios app");
 
             // launch app on simulator

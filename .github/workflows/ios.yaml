@@ -10,7 +10,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: webbrowser=TRACE
-  IOS_TARGET: x86_64-apple-ios
+  IOS_TARGET: aarch64-apple-ios-sim
 
 jobs:
   build:

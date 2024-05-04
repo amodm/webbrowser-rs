@@ -29,40 +29,8 @@ mod tests {
         glue_dir.push("testglue");
         run_cmd(&glue_dir, &["./build"]).expect("glue code build failed");
 
-        // invoke server
-        check_request_received_using(uri, &ipv4, |url, _port| {
-            // modify ios app code to use the correct url
-            let mut swift_src = PathBuf::from(&app_dir);
-            swift_src.push("test-ios-app/ContentView.swift");
-            let old_code =
-                fs::read_to_string(&swift_src).expect("failed to read ContentView.swift");
-            let new_code = old_code
-                .split('\n')
-                .map(|s| {
-                    if s.starts_with("let SERVER_URL") {
-                        format!("let SERVER_URL = \"{}\"", url)
-                    } else {
-                        s.into()
-                    }
-                })
-                .collect::<Vec<String>>()
-                .join("\n");
-            fs::write(&swift_src, new_code).expect("failed to modify ContentView.swift");
-            let revert_code = || fs::write(&swift_src, &old_code).expect("failed to revert code");
-            let handle_exec_result = |result: std::io::Result<ExitStatus>, err_msg: &str| {
-                revert_code();
-                let success = match result {
-                    Ok(status) => status.success(),
-                    Err(_) => false,
-                };
-                if !success {
-                    eprintln!("{err_msg}");
-                    std::process::exit(1);
-                }
-            };
-
-            // build app
-            let exec_result = run_cmd(
+        let compile_app = || {
+            run_cmd(
                 &app_dir,
                 &[
                     "xcrun",
@@ -82,7 +50,45 @@ mod tests {
                         "x86_64"
                     },
                 ],
-            );
+            )
+        };
+        compile_app().expect("compilation warm up failed for the app");
+
+        // invoke server
+        check_request_received_using(uri, &ipv4, |url, _port| {
+            // modify ios app code to use the correct url
+            let mut swift_src = PathBuf::from(&app_dir);
+            swift_src.push("test-ios-app/ContentView.swift");
+            let old_code =
+                fs::read_to_string(&swift_src).expect("failed to read ContentView.swift");
+            let new_code = old_code
+                .split('\n')
+                .map(|s| {
+                    if s.starts_with("let SERVER_URL") {
+                        format!("let SERVER_URL = \"{}\"", url)
+                    } else {
+                        s.into()
+                    }
+                })
+                .collect::<Vec<String>>()
+                .join("\n");
+            fs::write(&swift_src, &new_code).expect("failed to modify ContentView.swift");
+            let revert_code = || fs::write(&swift_src, &old_code).expect("failed to revert code");
+            println!("Modifying ContentView.swift to:\n{}", &new_code);
+            let handle_exec_result = |result: std::io::Result<ExitStatus>, err_msg: &str| {
+                revert_code();
+                let success = match result {
+                    Ok(status) => status.success(),
+                    Err(_) => false,
+                };
+                if !success {
+                    eprintln!("{err_msg}");
+                    std::process::exit(1);
+                }
+            };
+
+            // build app
+            let exec_result = compile_app();
             handle_exec_result(exec_result, "failed to build ios app");
 
             // launch app on simulator

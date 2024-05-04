@@ -8,9 +8,9 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
+  RUST_BACKTRACE: full
   RUST_LOG: webbrowser=TRACE
-  IOS_TARGET: x86_64-apple-ios
+  IOS_TARGET: aarch64-apple-ios-sim
 
 jobs:
   build:
@@ -24,6 +24,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         name: Checkout
+      - name: Select Xcode 15.4
+        run: sudo xcode-select -s /Applications/Xcode_15.4.app/Contents/Developer
       - name: Install rust version
         run: |
           rustup install ${{ matrix.rust }} --profile minimal
@@ -33,19 +35,19 @@ jobs:
       - name: Configure and start iOS Simulator
         run: |
           set -e
-          open -a Simulator
-          sleep 5
-          IOSRUNTIME=$(xcrun simctl list 2>&1 | egrep '^iOS' | head -n 1 | awk '{ print $NF }')
+          IOSRUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-17-5
           IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | grep -v ' SE ' | tail -n 1 | tr -d '()' | awk '{ print $NF }')
           DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
           echo "==== using device $IOSDEV, $IOSRUNTIME ===="
           xcrun simctl boot $DEVID
-          sleep 5
+          sleep 10
           xcrun simctl list 2>&1
 
       # Run tests
       - name: Run tests
-        run: cargo +${{ matrix.rust }} test --verbose --test test_ios -- --include-ignored
+        run: cargo +${{ matrix.rust }} test --verbose --test test_ios -- --include-ignored --nocapture
+        env:
+          TEST_REQ_TIMEOUT: '300'
 
       # Code format, linting etc.
       - name: Check Code Formatting

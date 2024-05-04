@@ -14,14 +14,14 @@
 //!
 //! ## Platform Support Status
 //!
-//! | Platform | Supported | Browsers | Test status |
-//! |----------|-----------|----------|-------------|
-//! | macos    | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
-//! | windows  | ✅        | default only | ✅ |
-//! | linux/wsl | ✅       | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
-//! | android  | ✅        | default only | ✅ |
-//! | ios      | ✅        | default only | ✅ |
-//! | wasm     | ✅        | default only | ✅ |
+//! | Platform              | Supported | Browsers | Test status |
+//! |-----------------------|-----------|----------|-------------|
+//! | macOS                 | ✅        | default + [others](https://docs.rs/webbrowser/latest/webbrowser/enum.Browser.html) | ✅ |
+//! | windows               | ✅        | default only | ✅ |
+//! | linux/wsl             | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
+//! | android               | ✅        | default only | ✅ |
+//! | iOS/tvOS/visionOS     | ✅        | default only | ✅ |
+//! | wasm                  | ✅        | default only | ✅ |
 //! | unix (*bsd, aix etc.) | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | Manual |
 //!
 //! ## Consistent Behaviour
@@ -39,7 +39,10 @@
 //! * `disable-wsl` - this disables WSL `file` implementation (`http` still works)
 //! * `wasm-console` - this enables logging to wasm console (valid only on wasm platform)
 
-#[cfg_attr(any(target_os = "ios", target_os = "tvos"), path = "ios.rs")]
+#[cfg_attr(
+    any(target_os = "ios", target_os = "tvos", target_os = "visionos"),
+    path = "ios.rs"
+)]
 #[cfg_attr(target_os = "macos", path = "macos.rs")]
 #[cfg_attr(target_os = "android", path = "android.rs")]
 #[cfg_attr(target_family = "wasm", path = "wasm.rs")]
@@ -50,6 +53,7 @@
         not(any(
             target_os = "ios",
             target_os = "tvos",
+            target_os = "visionos",
             target_os = "macos",
             target_os = "android",
             target_family = "wasm",
@@ -67,6 +71,7 @@ mod os;
         not(any(
             target_os = "ios",
             target_os = "tvos",
+            target_os = "visionos",
             target_os = "macos",
             target_os = "android",
             target_family = "wasm",
@@ -316,6 +321,7 @@ pub fn open_browser_with_options(
     if cfg!(any(
         target_os = "ios",
         target_os = "tvos",
+        target_os = "visionos",
         target_os = "macos",
         target_os = "android",
         target_family = "wasm",
@@ -338,6 +344,8 @@ impl TargetType {
         feature = "hardened",
         target_os = "android",
         target_os = "ios",
+        target_os = "tvos",
+        target_os = "visionos",
         target_family = "wasm"
     ))]
     fn is_http(&self) -> bool {
@@ -346,7 +354,13 @@ impl TargetType {
 
     /// If `target` represents a valid http/https url, return the str corresponding to it
     /// else return `std::io::Error` of kind `std::io::ErrorKind::InvalidInput`
-    #[cfg(any(target_os = "android", target_os = "ios", target_family = "wasm"))]
+    #[cfg(any(
+        target_os = "android",
+        target_os = "ios",
+        target_os = "tvos",
+        target_os = "visionos",
+        target_family = "wasm"
+    ))]
     fn get_http_url(&self) -> Result<&str> {
         if self.is_http() {
             Ok(self.0.as_str())

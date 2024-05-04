@@ -81,7 +81,9 @@ where
     op(&format!("http://{}:{}{}", host, port, &uri), port);
 
     // wait for the url to be hit
-    let timeout = 90;
+    let timeout = option_env!("TEST_REQ_TIMEOUT")
+        .map(|s| s.parse().expect("failed to parse TEST_REQ_TIMEOUT"))
+        .unwrap_or(90);
     match rx.recv_timeout(std::time::Duration::from_secs(timeout)) {
         Ok(msg) => assert_eq!(decode(&msg).unwrap(), uri),
         Err(_) => panic!("failed to receive uri data"),

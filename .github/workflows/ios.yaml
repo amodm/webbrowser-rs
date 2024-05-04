@@ -37,7 +37,7 @@ jobs:
           set -e
           open -a Simulator
           sleep 5
-          IOSRUNTIME=$(xcrun simctl list 2>&1 | egrep '^iOS' | head -n 1 | awk '{ print $NF }')
+          IOSRUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-17-4
           IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | grep -v ' SE ' | tail -n 1 | tr -d '()' | awk '{ print $NF }')
           DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
           echo "==== using device $IOSDEV, $IOSRUNTIME ===="

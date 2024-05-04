@@ -81,7 +81,7 @@ where
     op(&format!("http://{}:{}{}", host, port, &uri), port);
 
     // wait for the url to be hit
-    let timeout = 90;
+    let timeout = if cfg!(target_os = "ios") { 360 } else { 90 };
     match rx.recv_timeout(std::time::Duration::from_secs(timeout)) {
         Ok(msg) => assert_eq!(decode(&msg).unwrap(), uri),
         Err(_) => panic!("failed to receive uri data"),

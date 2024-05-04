@@ -48,6 +48,8 @@ jobs:
       # Run tests
       - name: Run tests
         run: cargo +${{ matrix.rust }} test --verbose --test test_ios -- --include-ignored --nocapture
+        env:
+          TEST_REQ_TIMEOUT: '300'
 
       # Code format, linting etc.
       - name: Check Code Formatting

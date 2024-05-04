@@ -8,7 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  RUST_BACKTRACE: 1
+  RUST_BACKTRACE: full
   RUST_LOG: webbrowser=TRACE
   IOS_TARGET: aarch64-apple-ios-sim
 
@@ -40,12 +40,12 @@ jobs:
           DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
           echo "==== using device $IOSDEV, $IOSRUNTIME ===="
           xcrun simctl boot $DEVID
-          sleep 5
+          sleep 10
           xcrun simctl list 2>&1
 
       # Run tests
       - name: Run tests
-        run: cargo +${{ matrix.rust }} test --verbose --test test_ios -- --include-ignored
+        run: cargo +${{ matrix.rust }} test --verbose --test test_ios -- --include-ignored --nocapture
 
       # Code format, linting etc.
       - name: Check Code Formatting

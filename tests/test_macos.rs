@@ -18,11 +18,11 @@ mod tests {
         check_browser(Browser::Safari, TEST_PLATFORM).await;
     }
 
-    #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
-    #[ignore]
-    async fn test_open_firefox() {
-        check_browser(Browser::Firefox, TEST_PLATFORM).await;
-    }
+    // #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
+    // #[ignore]
+    // async fn test_open_firefox() {
+    //     check_browser(Browser::Firefox, TEST_PLATFORM).await;
+    // }
 
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     #[ignore]

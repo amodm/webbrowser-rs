@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2024-05-06 <a name="1.0.1"></a>
+### Added
+- Support for visionOS. See PR #86 and #87
+
 ## [1.0.0] - 2024-04-20 <a name="1.0.0"></a>
 ### Added
 - Move to 1.0! MSRV has now been defined too.
@@ -190,7 +194,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.0...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.1...HEAD
+[1.0.1]: https://github.com/amodm/webbrowser-rs/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/amodm/webbrowser-rs/compare/v0.8.15...v1.0.0
 [0.8.15]: https://github.com/amodm/webbrowser-rs/compare/v0.8.14...v0.8.15
 [0.8.14]: https://github.com/amodm/webbrowser-rs/compare/v0.8.13...v0.8.14

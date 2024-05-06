@@ -74,7 +74,6 @@ mod tests {
                 .join("\n");
             fs::write(&swift_src, &new_code).expect("failed to modify ContentView.swift");
             let revert_code = || fs::write(&swift_src, &old_code).expect("failed to revert code");
-            println!("Modifying ContentView.swift to:\n{}", &new_code);
             let handle_exec_result = |result: std::io::Result<ExitStatus>, err_msg: &str| {
                 revert_code();
                 let success = match result {

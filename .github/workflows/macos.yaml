@@ -5,6 +5,8 @@ on:
     branches-ignore: [ '**win**', '**android**', '**linux**', '**bsd**', '**haiku**', '**wasm**', '**ios**' ]
   pull_request:
     branches: [ main ]
+  schedule:
+    - cron: '0 0 1 * *'
 
 env:
   CARGO_TERM_COLOR: always

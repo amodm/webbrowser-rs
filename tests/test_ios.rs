@@ -72,7 +72,7 @@ mod tests {
                 })
                 .collect::<Vec<String>>()
                 .join("\n");
-            fs::write(&swift_src, &new_code).expect("failed to modify ContentView.swift");
+            fs::write(&swift_src, new_code).expect("failed to modify ContentView.swift");
             let revert_code = || fs::write(&swift_src, &old_code).expect("failed to revert code");
             let handle_exec_result = |result: std::io::Result<ExitStatus>, err_msg: &str| {
                 revert_code();

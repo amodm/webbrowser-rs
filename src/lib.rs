@@ -86,10 +86,11 @@ use std::ops::Deref;
 use std::str::FromStr;
 use std::{error, fmt};
 
-#[derive(Debug, Eq, PartialEq, Copy, Clone, Hash)]
+#[derive(Debug, Default, Eq, PartialEq, Copy, Clone, Hash)]
 /// Browser types available
 pub enum Browser {
     ///Operating system's default browser
+    #[default]
     Default,
 
     ///Mozilla Firefox
@@ -141,12 +142,6 @@ impl fmt::Display for ParseBrowserError {
 impl error::Error for ParseBrowserError {
     fn description(&self) -> &str {
         "invalid browser"
-    }
-}
-
-impl std::default::Default for Browser {
-    fn default() -> Self {
-        Browser::Default
     }
 }
 

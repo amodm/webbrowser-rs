@@ -38,7 +38,7 @@ if webbrowser::open("http://github.com").is_ok() {
 | windows  | ✅        | default only | ✅ |
 | linux/wsl | ✅       | default only (respects $BROWSER env var, so can be used with other browsers) | ✅ |
 | android  | ✅        | default only | ✅ |
-| ios      | ✅        | default only | ✅ |
+| ios/tvOS/visionOS    | ✅        | default only | ✅ |
 | wasm     | ✅        | default only | ✅ |
 | unix (*bsd, aix etc.) | ✅        | default only (respects $BROWSER env var, so can be used with other browsers) | Manual |
 

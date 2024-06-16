@@ -27,11 +27,11 @@
 //! ## Consistent Behaviour
 //! `webbrowser` defines consistent behaviour on all platforms as follows:
 //! * **Browser guarantee** - This library guarantees that the browser is opened, even for local files - the only crate to make such guarantees
-//! at the time of this writing. Alternative libraries rely on existing system commands, which may lead to an editor being opened (instead
-//! of the browser) for local html files, leading to an inconsistent behaviour for users.
+//!   at the time of this writing. Alternative libraries rely on existing system commands, which may lead to an editor being opened (instead
+//!   of the browser) for local html files, leading to an inconsistent behaviour for users.
 //! * **Non-Blocking** for GUI based browsers (e.g. Firefox, Chrome etc.), while **Blocking** for text based browser (e.g. lynx etc.)
 //! * **Suppressed output** by default for GUI based browsers, so that their stdout/stderr don't pollute the main program's output. This can be
-//! overridden by `webbrowser::open_browser_with_options`.
+//!   overridden by `webbrowser::open_browser_with_options`.
 //!
 //! ## Crate Features
 //! `webbrowser` optionally allows the following features to be configured:

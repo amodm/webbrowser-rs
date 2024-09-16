@@ -29,7 +29,7 @@ wasm-console = ["web-sys/console"]
 home = "0.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.9"
+core-foundation = "0.10"
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"

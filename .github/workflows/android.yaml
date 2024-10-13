@@ -24,9 +24,9 @@ jobs:
     strategy:
       matrix:
         rust: [ stable ]
-        api-level: [ 33 ]
-        ndk-version: [ '25.1.8937393' ]
-        cmake-version: [ '3.22.1' ]
+        api-level: [ 35 ]
+        ndk-version: [ '27.1.12297006' ]
+        cmake-version: [ '3.30.4' ]
     continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
     steps:
       - uses: actions/checkout@v3

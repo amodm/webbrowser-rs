@@ -13,4 +13,4 @@ ndk-glue = "0.7"
 webbrowser = { path = "../.." }
 
 [package.metadata.android.sdk]
-target_sdk_version = 35
+target_sdk_version = 34

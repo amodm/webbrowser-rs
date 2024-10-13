@@ -24,7 +24,7 @@ jobs:
     strategy:
       matrix:
         rust: [ stable ]
-        api-level: [ 35 ]
+        api-level: [ 34 ]
         ndk-version: [ '27.1.12297006' ]
         cmake-version: [ '3.30.4' ]
     continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
@@ -56,6 +56,11 @@ jobs:
         run: rustup run ${{ matrix.rust }} cargo build --test test_android
 
       # Check if AVD is in cache, else create AVD
+      - name: Enable KVM group perms
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
       - name: AVD cache
         uses: actions/cache@v3
         id: avd-cache

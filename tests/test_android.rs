@@ -20,7 +20,7 @@ mod tests {
     async fn test_android() {
         let mut app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         app_dir.push("tests/test-android-app");
-        let uri = format!("/{}", TEST_PLATFORM);
+        let uri = format!("/{TEST_PLATFORM}");
 
         check_request_received_using(uri, "127.0.0.1", |url, port| {
             // modify android app code to use the correct url
@@ -32,7 +32,7 @@ mod tests {
                 .split('\n')
                 .map(|s| {
                     if s.starts_with("const SERVER_URL") {
-                        format!("const SERVER_URL: &str = \"{}\";", url)
+                        format!("const SERVER_URL: &str = \"{url}\";")
                     } else {
                         s.into()
                     }
@@ -55,7 +55,7 @@ mod tests {
                 log::error!("failed to run {:?}", adb_cmd);
             }
 
-            let adb_reverse_port = format!("tcp:{}", port);
+            let adb_reverse_port = format!("tcp:{port}");
             let mut adb_cmd = Command::new("adb");
             adb_cmd
                 .arg("reverse")
@@ -63,8 +63,7 @@ mod tests {
                 .arg(&adb_reverse_port);
             assert!(
                 adb_cmd.status().expect("Failed to invoke").success(),
-                "Failed to run {:?}",
-                adb_cmd
+                "Failed to run {adb_cmd:?}"
             );
 
             // invoke app in android
@@ -83,8 +82,7 @@ mod tests {
             // check for apk run status
             assert!(
                 apk_run_status.expect("Failed to invoke").success(),
-                "failed to run {:?}",
-                apk_run_cmd
+                "failed to run {apk_run_cmd:?}"
             );
         })
         .await;

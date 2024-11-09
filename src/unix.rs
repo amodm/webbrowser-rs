@@ -466,7 +466,7 @@ mod tests_xdg {
     fn get_temp_path(name: &str, suffix: &str) -> String {
         let pid = std::process::id();
         std::env::temp_dir()
-            .join(format!("{}.{}.{}", name, pid, suffix))
+            .join(format!("{name}.{pid}.{suffix}"))
             .into_os_string()
             .into_string()
             .expect("failed to convert into string")

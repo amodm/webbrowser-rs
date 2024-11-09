@@ -15,7 +15,7 @@ mod tests {
     #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_wasm32() {
-        let uri = &format!("/{}", TEST_PLATFORM);
+        let uri = &format!("/{TEST_PLATFORM}");
         let ipv4 = "127.0.0.1";
         check_request_received_using(uri.into(), ipv4, |url, _port| {
             // modify html to use the correct url

@@ -37,8 +37,7 @@ async fn delayed_response(req: HttpRequest) -> impl Responder {
     HttpResponse::Ok()
         .content_type("text/html; charset=utf-8")
         .body(format!(
-            "<html><body><p>Delayed by {}ms</p></body></html>",
-            qs
+            "<html><body><p>Delayed by {qs}ms</p></body></html>"
         ))
 }
 
@@ -50,7 +49,7 @@ where
     let _ = env_logger::try_init();
 
     // start the server on a random port
-    let bind_addr = format!("{}:0", host);
+    let bind_addr = format!("{host}:0");
     let (tx, rx) = cbc::bounded(2);
     let data = AppState {
         tx: Arc::new(tx.clone()),
@@ -110,8 +109,8 @@ where
     let tmpdir = cwd.join("target").join("tmp");
     let html_dir = html_dir.unwrap_or(tmpdir);
     let id = rand::thread_rng().next_u32();
-    let pb = html_dir.join(format!("test.{}.html", id));
-    let img_uri = format!("{}?r={}", URI_PNG_1PX, id);
+    let pb = html_dir.join(format!("test.{id}.html"));
+    let img_uri = format!("{URI_PNG_1PX}?r={id}");
     check_request_received_using(img_uri, "127.0.0.1", |uri, _port| {
         let url = url_op(&pb);
         let mut html_file = std::fs::File::create(&pb).expect("failed to create html file");
@@ -132,8 +131,8 @@ where
 
 #[allow(dead_code)]
 pub async fn check_browser(browser: Browser, platform: &str) {
-    check_request_received(browser, format!("/{}", platform)).await;
-    check_request_received(browser, format!("/{}/😀😀😀", platform)).await;
+    check_request_received(browser, format!("/{platform}")).await;
+    check_request_received(browser, format!("/{platform}/😀😀😀")).await;
 }
 
 const URI_PNG_1PX: &str = "/img/1px.png";

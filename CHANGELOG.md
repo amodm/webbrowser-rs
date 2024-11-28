@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.3] - 2024-11-28 <a name="1.0.3"></a>
+### Added
+- Unix: add support for solaris
+
 ## [1.0.2] - 2024-09-16 <a name="1.0.2"></a>
 ### Changed
 - macOS: move to core-foundation 0.10
@@ -198,7 +202,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.2...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.3...HEAD
+[1.0.3]: https://github.com/amodm/webbrowser-rs/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/amodm/webbrowser-rs/compare/v1.0.1...v1.0.2
 [1.0.1]: https://github.com/amodm/webbrowser-rs/compare/v1.0.0...v1.0.1
 [1.0.0]: https://github.com/amodm/webbrowser-rs/compare/v0.8.15...v1.0.0

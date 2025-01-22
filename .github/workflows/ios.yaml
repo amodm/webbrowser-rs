@@ -17,7 +17,7 @@ env:
 jobs:
   build:
     name: Build
-    runs-on: macos-latest
+    runs-on: macos-15
     if: ${{ !contains(github.event.head_commit.message, '#build-') || contains(github.event.head_commit.message, '#build-ios') }}
     strategy:
       matrix:
@@ -26,8 +26,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         name: Checkout
-      - name: Select Xcode 15.3
-        run: sudo xcode-select -s /Applications/Xcode_15.3.app/Contents/Developer
+      - name: Select Xcode 16.2
+        run: sudo xcode-select -s /Applications/Xcode_16.2.app/Contents/Developer
       - name: Install rust version
         run: |
           rustup install ${{ matrix.rust }} --profile minimal
@@ -37,8 +37,8 @@ jobs:
       - name: Configure and start iOS Simulator
         run: |
           set -e
-          IOSRUNTIME=com.apple.CoreSimulator.SimRuntime.iOS-17-4
-          IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | grep -v ' SE ' | tail -n 1 | tr -d '()' | awk '{ print $NF }')
+          IOSRUNTIME=$(xcrun simctl list runtimes | grep SimRuntime.iOS | awk '{ print $NF }' | egrep 'iOS-[0-9]{2}-' | sort | tail -n 1)
+          IOSDEV=$(xcrun simctl list 2>&1 | grep com.apple.CoreSimulator.SimDeviceType.iPhone | awk '{ print $NF }' | tr -d '()' | egrep 'iPhone-[0-9]{2}$' | sort | tail -n 1)
           DEVID=$(xcrun simctl create iphone-latest $IOSDEV $IOSRUNTIME)
           echo "==== using device $IOSDEV, $IOSRUNTIME ===="
           xcrun simctl boot $DEVID

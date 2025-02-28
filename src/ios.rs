@@ -1,22 +1,7 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-use block2::Block;
-use objc2::rc::Id;
-use objc2::runtime::Bool;
-use objc2::{class, msg_send, msg_send_id};
-use objc2_foundation::{NSDictionary, NSObject, NSString, NSURL};
-
-fn app() -> Option<Id<NSObject>> {
-    unsafe { msg_send_id![class!(UIApplication), sharedApplication] }
-}
-
-fn open_url(
-    app: &NSObject,
-    url: &NSURL,
-    options: &NSDictionary,
-    handler: Option<&Block<dyn Fn(Bool)>>,
-) {
-    unsafe { msg_send![app, openURL: url, options: options, completionHandler: handler] }
-}
+use objc2::MainThreadMarker;
+use objc2_foundation::{NSDictionary, NSString, NSURL};
+use objc2_ui_kit::UIApplication;
 
 /// Deal with opening of browsers on iOS/tvOS/visionOS.
 ///
@@ -34,10 +19,11 @@ pub(super) fn open_browser_internal(
         return Ok(());
     }
 
-    let app = app().ok_or(Error::new(
+    let mtm = MainThreadMarker::new().ok_or(Error::new(
         ErrorKind::Other,
-        "UIApplication is null, can't open url",
+        "UIApplication must be retrieved on main thread",
     ))?;
+    let app = UIApplication::sharedApplication(mtm);
 
     // Create ns string class from our string
     let url_string = NSString::from_str(url);
@@ -50,6 +36,6 @@ pub(super) fn open_browser_internal(
     let options = NSDictionary::new();
 
     // Open url
-    open_url(&app, &url_object, &options, None);
+    unsafe { app.openURL_options_completionHandler(&url_object, &options, None) };
     Ok(())
 }

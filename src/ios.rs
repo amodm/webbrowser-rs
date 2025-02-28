@@ -1,21 +1,29 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-use block2::Block;
-use objc2::rc::Id;
-use objc2::runtime::Bool;
-use objc2::{class, msg_send, msg_send_id};
+use std::ffi::c_void;
+
+use objc2::{class, msg_send, rc::Retained, Encode, Encoding, MainThreadMarker};
 use objc2_foundation::{NSDictionary, NSObject, NSString, NSURL};
 
-fn app() -> Option<Id<NSObject>> {
-    unsafe { msg_send_id![class!(UIApplication), sharedApplication] }
+use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
+
+/// Returns `UIApplication`
+#[allow(non_snake_case)]
+fn sharedApplication(_mtm: MainThreadMarker) -> Retained<NSObject> {
+    unsafe { msg_send![class!(UIApplication), sharedApplication] }
 }
 
-fn open_url(
-    app: &NSObject,
-    url: &NSURL,
-    options: &NSDictionary,
-    handler: Option<&Block<dyn Fn(Bool)>>,
-) {
-    unsafe { msg_send![app, openURL: url, options: options, completionHandler: handler] }
+/// Fake `block` to not have to depend on the `block2` crate just to set this to an empty/`None` block.
+#[repr(transparent)]
+struct FakeBlock(*const c_void);
+
+// SAFETY: The type is `#[repr(transparent)]` over a pointer (same layout as `Option<&block::Block<...>>`).
+unsafe impl Encode for FakeBlock {
+    const ENCODING: Encoding = Encoding::Block;
+}
+
+#[doc(alias = "openURL_options_completionHandler")]
+fn open_url(app: &NSObject, url: &NSURL, options: &NSDictionary) {
+    let fake_handler = FakeBlock(std::ptr::null());
+    unsafe { msg_send![app, openURL: url, options: options, completionHandler: fake_handler] }
 }
 
 /// Deal with opening of browsers on iOS/tvOS/visionOS.
@@ -34,10 +42,11 @@ pub(super) fn open_browser_internal(
         return Ok(());
     }
 
-    let app = app().ok_or(Error::new(
+    let mtm = MainThreadMarker::new().ok_or(Error::new(
         ErrorKind::Other,
-        "UIApplication is null, can't open url",
+        "UIApplication must be retrieved on the main thread",
     ))?;
+    let app = sharedApplication(mtm);
 
     // Create ns string class from our string
     let url_string = NSString::from_str(url);
@@ -50,6 +59,6 @@ pub(super) fn open_browser_internal(
     let options = NSDictionary::new();
 
     // Open url
-    open_url(&app, &url_object, &options, None);
+    open_url(&app, &url_object, &options);
     Ok(())
 }

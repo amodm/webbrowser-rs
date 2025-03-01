@@ -1,9 +1,18 @@
+use std::{
+    ffi::c_void,
+    ffi::{CStr, OsStr},
+    mem::MaybeUninit,
+    os::unix::ffi::OsStrExt,
+    path::PathBuf,
+    ptr::NonNull,
+};
+
+use objc2_core_foundation::{
+    CFArray, CFArrayCreate, CFError, CFRetained, CFStringBuiltInEncodings, CFURLCreateWithBytes,
+    CFURLGetFileSystemRepresentation, CFURL,
+};
+
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
-use core_foundation::array::{CFArray, CFArrayRef};
-use core_foundation::base::TCFType;
-use core_foundation::error::{CFError, CFErrorRef};
-use core_foundation::url::{CFURLRef, CFURL};
-use std::os::raw::c_void;
 
 /// Deal with opening of browsers on Mac OS X using Core Foundation framework
 pub(super) fn open_browser_internal(
@@ -19,23 +28,22 @@ pub(super) fn open_browser_internal(
         Browser::Safari => create_cf_url("file:///Applications/Safari.app/"),
         Browser::Default => {
             if let Some(dummy_url) = create_cf_url("https://") {
-                let mut err: CFErrorRef = std::ptr::null_mut();
+                let mut err = MaybeUninit::uninit();
                 let result = unsafe {
-                    LSCopyDefaultApplicationURLForURL(
-                        dummy_url.as_concrete_TypeRef(),
-                        LSROLE_VIEWER,
-                        &mut err,
-                    )
+                    LSCopyDefaultApplicationURLForURL(&dummy_url, LSROLE_VIEWER, err.as_mut_ptr())
                 };
-                if result.is_null() {
-                    log::error!("failed to get default browser: {}", unsafe {
-                        CFError::wrap_under_create_rule(err)
-                    });
-                    create_cf_url(DEFAULT_BROWSER_URL)
-                } else {
-                    let cf_url = unsafe { CFURL::wrap_under_create_rule(result) };
+                if let Some(result) = NonNull::new(result) {
+                    let cf_url = unsafe { CFRetained::from_raw(result) };
                     log::trace!("default browser is {:?}", &cf_url);
                     Some(cf_url)
+                } else {
+                    let error = unsafe {
+                        CFRetained::from_raw(NonNull::new(err.assume_init()).expect(
+                            "Error should be set when LSCopyDefaultApplicationURLForURL() returns NULL",
+                        ))
+                    };
+                    log::error!("failed to get default browser: {}", error);
+                    create_cf_url(DEFAULT_BROWSER_URL)
                 }
             } else {
                 create_cf_url(DEFAULT_BROWSER_URL)
@@ -53,11 +61,19 @@ pub(super) fn open_browser_internal(
     let cf_url = create_cf_url(target.as_ref())
         .ok_or_else(|| Error::new(ErrorKind::Other, "failed to create CFURL"))?;
 
-    let urls_v = [cf_url];
-    let urls_arr = CFArray::<CFURL>::from_CFTypes(&urls_v);
+    let mut urls_v = [cf_url];
+    let urls_arr = unsafe {
+        CFArrayCreate(
+            None,
+            urls_v.as_mut_ptr().cast(),
+            urls_v.len() as isize,
+            std::ptr::null(),
+        )
+    }
+    .expect("Failed to create CFArray from slice");
     let spec = LSLaunchURLSpec {
-        app_url: browser_cf_url.as_concrete_TypeRef(),
-        item_urls: urls_arr.as_concrete_TypeRef(),
+        app_url: &*browser_cf_url,
+        item_urls: &*urls_arr,
         pass_thru_params: std::ptr::null(),
         launch_flags: LS_LAUNCH_FLAG_DEFAULTS | LS_LAUNCH_FLAG_ASYNC,
         async_ref_con: std::ptr::null(),
@@ -65,7 +81,7 @@ pub(super) fn open_browser_internal(
 
     // handle dry-run scenario
     if options.dry_run {
-        return if let Some(path) = browser_cf_url.to_path() {
+        return if let Some(path) = cf_url_as_path(&browser_cf_url) {
             if path.is_dir() {
                 log::debug!("dry-run: not actually opening the browser {}", &browser);
                 Ok(())
@@ -83,8 +99,7 @@ pub(super) fn open_browser_internal(
 
     // launch the browser
     log::trace!("about to start browser: {} for {}", &browser, &target);
-    let mut launched_app: CFURLRef = std::ptr::null_mut();
-    let status = unsafe { LSOpenFromURLSpec(&spec, &mut launched_app) };
+    let status = unsafe { LSOpenFromURLSpec(&spec, std::ptr::null_mut()) };
     log::trace!("received status: {}", status);
     if status == 0 {
         Ok(())
@@ -94,22 +109,37 @@ pub(super) fn open_browser_internal(
 }
 
 /// Create a Core Foundation CFURL object given a rust-y `url`
-fn create_cf_url(url: &str) -> Option<CFURL> {
+fn create_cf_url(url: &str) -> Option<CFRetained<CFURL>> {
     let url_u8 = url.as_bytes();
-    let url_ref = unsafe {
-        core_foundation::url::CFURLCreateWithBytes(
-            std::ptr::null(),
+    unsafe {
+        CFURLCreateWithBytes(
+            None,
             url_u8.as_ptr(),
             url_u8.len() as isize,
-            core_foundation::string::kCFStringEncodingUTF8,
-            std::ptr::null(),
+            CFStringBuiltInEncodings::EncodingUTF8.0,
+            None,
         )
-    };
+    }
+}
 
-    if url_ref.is_null() {
-        None
-    } else {
-        Some(unsafe { CFURL::wrap_under_create_rule(url_ref) })
+// Partially borrowed from https://docs.rs/core-foundation/0.10.0/src/core_foundation/url.rs.html#90-107
+fn cf_url_as_path(url: &CFURL) -> Option<PathBuf> {
+    // From libc
+    pub const PATH_MAX: i32 = 1024;
+    // implementing this on Windows is more complicated because of the different OsStr representation
+    unsafe {
+        let mut buf = [0u8; PATH_MAX as usize];
+        let result =
+            CFURLGetFileSystemRepresentation(url, true, buf.as_mut_ptr(), buf.len() as isize);
+        if !result {
+            return None;
+        }
+        // let len = strlen(buf.as_ptr() as *const c_char);
+        // let path = OsStr::from_bytes(&buf[0..len]);
+        // TODO: Requires MSRV bump
+        let path = CStr::from_bytes_until_nul(&buf).expect("buf must be NUL-terminated");
+        let path = OsStr::from_bytes(path.to_bytes());
+        Some(PathBuf::from(path))
     }
 }
 
@@ -172,8 +202,8 @@ const LS_LAUNCH_FLAG_ASYNC: u32 = 0x00010000;
 
 #[repr(C)]
 struct LSLaunchURLSpec {
-    app_url: CFURLRef,
-    item_urls: CFArrayRef,
+    app_url: *const CFURL,
+    item_urls: *const CFArray,
     pass_thru_params: *const c_void,
     launch_flags: u32,
     async_ref_con: *const c_void,
@@ -185,16 +215,16 @@ extern "C" {
     /// Used to get the default browser configured for the user. See:
     /// https://developer.apple.com/documentation/coreservices/1448824-lscopydefaultapplicationurlforur?language=objc
     fn LSCopyDefaultApplicationURLForURL(
-        inURL: CFURLRef,
+        inURL: &CFURL,
         inRoleMask: LSRolesMask,
-        outError: *mut CFErrorRef,
-    ) -> CFURLRef;
+        outError: *mut *mut CFError,
+    ) -> *mut CFURL;
 
     /// Used to launch the browser to open a url
     /// https://developer.apple.com/documentation/coreservices/1441986-lsopenfromurlspec?language=objc
     fn LSOpenFromURLSpec(
         inLaunchSpec: *const LSLaunchURLSpec,
-        outLaunchedURL: *mut CFURLRef,
+        outLaunchedURL: *mut *mut CFURL,
     ) -> OSStatus;
 }
 

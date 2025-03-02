@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.69"
 
 [dependencies]
 log = "0.4"
@@ -29,7 +29,14 @@ wasm-console = ["web-sys/console"]
 home = "0.5"
 
 [target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.10"
+objc2-core-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "CFArray",
+    "CFBase",
+    "CFError",
+    "CFString",
+    "CFURL",
+] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.21"

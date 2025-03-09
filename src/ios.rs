@@ -1,12 +1,12 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use block2::Block;
-use objc2::rc::Id;
+use objc2::rc::Retained;
 use objc2::runtime::Bool;
-use objc2::{class, msg_send, msg_send_id};
+use objc2::{class, msg_send};
 use objc2_foundation::{NSDictionary, NSObject, NSString, NSURL};
 
-fn app() -> Option<Id<NSObject>> {
-    unsafe { msg_send_id![class!(UIApplication), sharedApplication] }
+fn app() -> Option<Retained<NSObject>> {
+    unsafe { msg_send![class!(UIApplication), sharedApplication] }
 }
 
 fn open_url(

@@ -2,10 +2,18 @@ use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use block2::Block;
 use objc2::rc::Retained;
 use objc2::runtime::Bool;
-use objc2::{class, msg_send};
+use objc2::{class, msg_send, MainThreadMarker};
 use objc2_foundation::{NSDictionary, NSObject, NSString, NSURL};
 
-fn app() -> Option<Retained<NSObject>> {
+fn app(mtm: MainThreadMarker) -> Option<Retained<NSObject>> {
+    let _ = mtm;
+    // SAFETY: The signature is correct, and we hold `MainThreadMarker`, so we
+    // know we're on the main thread where it's safe to access the shared
+    // UIApplication.
+    //
+    // NOTE: `sharedApplication` is declared as returning non-NULL, but it
+    // will only do so inside `UIApplicationMain`; if called outside, the
+    // shared application is NULL.
     unsafe { msg_send![class!(UIApplication), sharedApplication] }
 }
 
@@ -29,12 +37,19 @@ pub(super) fn open_browser_internal(
     // ensure we're opening only http/https urls, failing otherwise
     let url = target.get_http_url()?;
 
+    let mtm = MainThreadMarker::new().ok_or_else(|| {
+        Error::new(
+            ErrorKind::Other,
+            "Cannot open URL from a thread that is not the main thread",
+        )
+    })?;
+
     // always return true for a dry run
     if options.dry_run {
         return Ok(());
     }
 
-    let app = app().ok_or(Error::new(
+    let app = app(mtm).ok_or(Error::new(
         ErrorKind::Other,
         "UIApplication is null, can't open url",
     ))?;

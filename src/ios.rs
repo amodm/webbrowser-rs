@@ -7,7 +7,15 @@ use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 
 /// Returns `UIApplication`
 #[allow(non_snake_case)]
-fn sharedApplication(_mtm: MainThreadMarker) -> Retained<NSObject> {
+fn sharedApplication(mtm: MainThreadMarker) -> Option<Retained<NSObject>> {
+    let _ = mtm;
+    // SAFETY: The signature is correct, and we hold `MainThreadMarker`, so we
+    // know we're on the main thread where it's safe to access the shared
+    // UIApplication.
+    //
+    // NOTE: `sharedApplication` is declared as returning non-NULL, but it
+    // will only do so inside `UIApplicationMain`; if called outside, the
+    // shared application is NULL.
     unsafe { msg_send![class!(UIApplication), sharedApplication] }
 }
 
@@ -46,7 +54,11 @@ pub(super) fn open_browser_internal(
         ErrorKind::Other,
         "UIApplication must be retrieved on the main thread",
     ))?;
-    let app = sharedApplication(mtm);
+
+    let app = sharedApplication(mtm).ok_or(Error::new(
+        ErrorKind::Other,
+        "UIApplication is NULL, perhaps UIApplicationMain has not been executed?",
+    ))?;
 
     // Create ns string class from our string
     let url_string = NSString::from_str(url);

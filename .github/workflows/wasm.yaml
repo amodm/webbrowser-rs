@@ -12,8 +12,7 @@ env:
   CARGO_TERM_COLOR: always
   RUST_BACKTRACE: 1
   RUST_LOG: webbrowser=TRACE
-  WASM_PACK_VERSION: '0.10.3'
-  WASM_TARGET: wasm32-unknown-unknown
+  WASM_PACK_VERSION: '0.13.1'
 
 jobs:
   build:
@@ -24,7 +23,8 @@ jobs:
       max-parallel: 1
       matrix:
         rust: [stable, beta]
-    continue-on-error: ${{ matrix.rust != 'stable' && matrix.rust != 'beta' }}
+        wasmarch: [wasm32-unknown-unknown]
+    continue-on-error: ${{ matrix.rust == 'beta' || matrix.wasmarch == 'wasm64-unknown-unknown' }}
     steps:
       - uses: actions/checkout@v3
         name: Checkout
@@ -32,7 +32,7 @@ jobs:
         run: |
           rustup install ${{ matrix.rust }} --profile minimal
           rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
-          rustup target add ${{ env.WASM_TARGET }}
+          rustup target add ${{ matrix.wasmarch }}
 
       # Install wasm-pack
       - uses: actions/cache@v3
@@ -65,4 +65,4 @@ jobs:
         run: cargo +${{ matrix.rust }} fmt --all -- --check
       - name: Lints
         if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
-        run: cargo +${{ matrix.rust }} clippy --target ${{ env.WASM_TARGET }} -- -D warnings
+        run: cargo +${{ matrix.rust }} clippy --target ${{ matrix.wasmarch }} -- -D warnings

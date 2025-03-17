@@ -1,7 +1,7 @@
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 
-/// Deal with opening a URL in wasm32. This implementation ignores the browser attribute
-/// and always opens URLs in the same browser where wasm32 vm is running.
+/// Deal with opening a URL in wasm. This implementation ignores the browser attribute
+/// and always opens URLs in the same browser where wasm vm is running.
 pub(super) fn open_browser_internal(
     _: Browser,
     target: &TargetType,

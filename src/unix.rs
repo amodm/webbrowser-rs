@@ -287,7 +287,7 @@ fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
     let app_suffix = "applications";
     for xdg_dir in get_xdg_dirs().iter_mut() {
         let mut config_path = xdg_dir.join(app_suffix).join(&browser_name);
-        trace!("checking for xdg config at {:?}", config_path);
+        trace!("checking for xdg config at {config_path:?}");
         let mut metadata = config_path.metadata();
         if metadata.is_err() && browser_name.contains('-') {
             // as per the spec, we need to replace '-' with /

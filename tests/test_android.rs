@@ -40,7 +40,7 @@ mod tests {
                 .collect::<Vec<String>>()
                 .join("\n");
             fs::write(&lib_rs, new_code).expect("failed to modify src/lib.rs");
-            log::debug!("modified src/lib.rs to use {}", url);
+            log::debug!("modified src/lib.rs to use {url}");
 
             // uninstall previous app version if existing
             let mut adb_cmd = Command::new("adb");
@@ -52,7 +52,7 @@ mod tests {
                     log::error!("adb uninstall failed");
                 }
             } else {
-                log::error!("failed to run {:?}", adb_cmd);
+                log::error!("failed to run {adb_cmd:?}");
             }
 
             let adb_reverse_port = format!("tcp:{port}");

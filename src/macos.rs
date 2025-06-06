@@ -170,7 +170,7 @@ const LSROLE_VIEWER: LSRolesMask = 0x00000002;
 const LS_LAUNCH_FLAG_DEFAULTS: u32 = 0x00000001;
 const LS_LAUNCH_FLAG_ASYNC: u32 = 0x00010000;
 
-#[repr(C)]
+#[repr(C, packed(2))] // Header contains `#pragma pack(push, 2)`.
 struct LSLaunchURLSpec {
     app_url: CFURLRef,
     item_urls: CFArrayRef,

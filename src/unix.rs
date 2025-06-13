@@ -391,7 +391,7 @@ fn get_xdg_dirs() -> Vec<PathBuf> {
         .ok()
         .map(PathBuf::from)
         .filter(|path| path.is_absolute())
-        .or_else(|| home::home_dir().map(|path| path.join(".local/share")));
+        .or_else(|| std::sys::os::home_dir().map(|path| path.join(".local/share")));
     if let Some(data_home) = data_home {
         xdg_dirs.push(data_home);
     }

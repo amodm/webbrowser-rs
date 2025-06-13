@@ -387,11 +387,12 @@ fn open_using_xdg_config(config_path: &PathBuf, options: &BrowserOptions, url: &
 fn get_xdg_dirs() -> Vec<PathBuf> {
     let mut xdg_dirs: Vec<PathBuf> = Vec::new();
 
+    #[allow(deprecated)]
     let data_home = std::env::var("XDG_DATA_HOME")
         .ok()
         .map(PathBuf::from)
         .filter(|path| path.is_absolute())
-        .or_else(|| std::sys::os::home_dir().map(|path| path.join(".local/share")));
+        .or_else(|| std::env::home_dir().map(|path| path.join(".local/share")));
     if let Some(data_home) = data_home {
         xdg_dirs.push(data_home);
     }

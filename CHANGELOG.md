@@ -3,6 +3,14 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.5] - 2025-03-10 <a name="1.0.5"></a>
+### Fixed
+- Unix: Fix build on redox os. See PR #104
+- macOS: Fix packed alignment of LSLaunchURLSpec. See PR #102
+
+### Added
+- WASM: support wasm64
+
 ## [1.0.4] - 2025-03-10 <a name="1.0.4"></a>
 ### Changed
 - iOS: Return appropriate errors if called from non-main thread or before UIApplication initialization. See PRs #95 and #99
@@ -206,7 +214,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.4...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.5...HEAD
+[1.0.5]: https://github.com/amodm/webbrowser-rs/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/amodm/webbrowser-rs/compare/v1.0.3...v1.0.4
 [1.0.3]: https://github.com/amodm/webbrowser-rs/compare/v1.0.2...v1.0.3
 [1.0.2]: https://github.com/amodm/webbrowser-rs/compare/v1.0.1...v1.0.2

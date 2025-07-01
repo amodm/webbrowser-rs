@@ -18,7 +18,7 @@ mod tests {
     #[ignore]
     #[tokio::test(flavor = "multi_thread", worker_threads = 2)]
     async fn test_ios() {
-        let uri = format!("/{}", TEST_PLATFORM);
+        let uri = format!("/{TEST_PLATFORM}");
         let ipv4 = get_ipv4_address();
 
         let mut app_dir = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
@@ -65,7 +65,7 @@ mod tests {
                 .split('\n')
                 .map(|s| {
                     if s.starts_with("let SERVER_URL") {
-                        format!("let SERVER_URL = \"{}\"", url)
+                        format!("let SERVER_URL = \"{url}\"")
                     } else {
                         s.into()
                     }

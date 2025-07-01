@@ -85,7 +85,7 @@ pub(super) fn open_browser_internal(
     log::trace!("about to start browser: {} for {}", &browser, &target);
     let mut launched_app: CFURLRef = std::ptr::null_mut();
     let status = unsafe { LSOpenFromURLSpec(&spec, &mut launched_app) };
-    log::trace!("received status: {}", status);
+    log::trace!("received status: {status}");
     if status == 0 {
         Ok(())
     } else {
@@ -137,7 +137,7 @@ impl From<OSStatus> for LSError {
 impl std::fmt::Display for LSError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Unknown(code) => write!(f, "ls_error: code {}", code),
+            Self::Unknown(code) => write!(f, "ls_error: code {code}"),
             Self::ApplicationNotFound => f.write_str("ls_error: application not found"),
             Self::NoLaunchPermission => f.write_str("ls_error: no launch permission"),
         }

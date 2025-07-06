@@ -55,11 +55,15 @@ pub(super) fn open_browser_internal(
 
     let urls_v = [cf_url];
     let urls_arr = CFArray::<CFURL>::from_CFTypes(&urls_v);
+    let mut launch_flags = LS_LAUNCH_FLAG_DEFAULTS | LS_LAUNCH_FLAG_ASYNC;
+    if options.dont_switch {
+        launch_flags |= LS_LAUNCH_FLAG_DONT_SWITCH;
+    }
     let spec = LSLaunchURLSpec {
         app_url: browser_cf_url.as_concrete_TypeRef(),
         item_urls: urls_arr.as_concrete_TypeRef(),
         pass_thru_params: std::ptr::null(),
-        launch_flags: LS_LAUNCH_FLAG_DEFAULTS | LS_LAUNCH_FLAG_ASYNC,
+        launch_flags,
         async_ref_con: std::ptr::null(),
     };
 
@@ -169,6 +173,7 @@ const LSROLE_VIEWER: LSRolesMask = 0x00000002;
 // as per https://developer.apple.com/documentation/coreservices/lslaunchflags/klslaunchdefaults?language=objc
 const LS_LAUNCH_FLAG_DEFAULTS: u32 = 0x00000001;
 const LS_LAUNCH_FLAG_ASYNC: u32 = 0x00010000;
+const LS_LAUNCH_FLAG_DONT_SWITCH: u32 = 0x00000200;
 
 #[repr(C, packed(2))] // Header contains `#pragma pack(push, 2)`.
 struct LSLaunchURLSpec {

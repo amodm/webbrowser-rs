@@ -185,6 +185,8 @@ pub struct BrowserOptions {
     suppress_output: bool,
     target_hint: String,
     dry_run: bool,
+    #[cfg(target_os = "macos")]
+    dont_switch: bool,
 }
 
 impl fmt::Display for BrowserOptions {
@@ -203,6 +205,8 @@ impl std::default::Default for BrowserOptions {
             suppress_output: true,
             target_hint,
             dry_run: false,
+            #[cfg(target_os = "macos")]
+            dont_switch: false,
         }
     }
 }
@@ -236,6 +240,13 @@ impl BrowserOptions {
     /// succeeded. Note the "likely" here - it's still indicative than guaranteed.
     pub fn with_dry_run(&mut self, dry_run: bool) -> &mut Self {
         self.dry_run = dry_run;
+        self
+    }
+
+    #[cfg(target_os = "macos")]
+    /// Do not switch to the browser window. This is macOS only right now.
+    pub fn with_dont_switch(&mut self, dont_switch: bool) -> &mut Self {
+        self.dont_switch = dont_switch;
         self
     }
 }

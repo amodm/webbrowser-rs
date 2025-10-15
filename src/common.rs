@@ -12,7 +12,7 @@ where
     let mut in_quotes = false;
     let mut idx = 0;
     for ch in line.chars() {
-        idx += 1;
+        idx += ch.len_utf8();
         match ch {
             '"' => {
                 if let Some(start_idx) = start {

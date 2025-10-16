@@ -63,6 +63,7 @@ pub(super) fn open_browser_internal(
     // Create ns string class from our string
     let url_string = NSString::from_str(url);
     // Create NSURL object with given string
+    #[allow(unused_unsafe)] // fix lint for now, eventually remove unsafe
     let url_object = unsafe { NSURL::URLWithString(&url_string) }.ok_or(Error::new(
         ErrorKind::Other,
         "Failed creating NSURL; is the URL valid?",

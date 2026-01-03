@@ -13,8 +13,8 @@ edition = "2021"
 rust-version = "1.60"
 
 [dependencies]
-log = "0.4"
-url = "2"
+log = { version = "0.4", default-features = false }
+url = { version = "2", default-features = false, features = ["std"] }
 
 [target.'cfg(target_family = "wasm")'.dependencies.web-sys]
 version = "0.3"

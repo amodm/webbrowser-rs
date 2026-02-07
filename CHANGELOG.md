@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2026-02-07 <a name="1.1.0"></a>
+### Added
+- macOS: provide a `dont_switch` option to allow opening browser in the background. See PR #106
+
 ## [1.0.6] - 2025-10-15 <a name="1.0.6"></a>
 ### Fixed
 - Windows: fix browser opening when unicode characters exist in path. See PR #108
@@ -218,7 +222,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.0.6...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/amodm/webbrowser-rs/compare/v1.0.6...v1.1.0
 [1.0.6]: https://github.com/amodm/webbrowser-rs/compare/v1.0.5...v1.0.6
 [1.0.5]: https://github.com/amodm/webbrowser-rs/compare/v1.0.4...v1.0.5
 [1.0.4]: https://github.com/amodm/webbrowser-rs/compare/v1.0.3...v1.0.4

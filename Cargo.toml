@@ -10,7 +10,7 @@ readme = "README.md"
 keywords = ["webbrowser", "browser"]
 license = "MIT OR Apache-2.0"
 edition = "2021"
-rust-version = "1.60"
+rust-version = "1.85"
 
 [dependencies]
 log = { version = "0.4", default-features = false }
@@ -29,7 +29,7 @@ wasm-console = ["web-sys/console"]
 core-foundation = "0.10"
 
 [target.'cfg(target_os = "android")'.dependencies]
-jni = "0.21"
+jni = "0.22.2"
 ndk-context = "0.1"
 
 [target.'cfg(any(target_os = "ios", target_os = "tvos", target_os = "visionos"))'.dependencies]
@@ -52,4 +52,4 @@ tokio = { version = "1", features = ["full"] }
 urlencoding = "2.1"
 
 [target.'cfg(target_os = "android")'.dev-dependencies]
-ndk-glue = { version = ">= 0.3, <= 0.7" }
+android-activity = { version = "0.6", features = ["native-activity"] }

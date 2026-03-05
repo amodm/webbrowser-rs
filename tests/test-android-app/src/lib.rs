@@ -1,10 +1,7 @@
-#[allow(non_snake_case)]
-extern crate ndk_glue;
-
 const SERVER_URL: &str = "http://127.0.0.1";
 
-#[cfg_attr(target_os = "android", ndk_glue::main(backtrace = "on"))]
-pub fn android_main() {
+#[unsafe(no_mangle)]
+pub fn android_main(_app: android_activity::AndroidApp) {
     println!("****** [WEBB DEBUG] {} ***** begin", SERVER_URL);
     webbrowser::open(SERVER_URL).unwrap();
     println!("****** [WEBB DEBUG] {} ***** end", SERVER_URL);

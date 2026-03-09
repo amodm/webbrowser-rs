@@ -1,4 +1,4 @@
-use super::{BrowserOptions, Error, ErrorKind, Result};
+use super::{BrowserOptions, Error, Result};
 use log::debug;
 use std::process::{Command, Stdio};
 
@@ -80,10 +80,7 @@ pub(crate) fn run_command(
             if status.success() {
                 Ok(())
             } else {
-                Err(Error::new(
-                    ErrorKind::Other,
-                    "command present but exited unsuccessfully",
-                ))
+                Err(Error::other("command present but exited unsuccessfully"))
             }
         })
     }

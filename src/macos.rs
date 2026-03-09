@@ -48,10 +48,10 @@ pub(super) fn open_browser_internal(
             ))
         }
     }
-    .ok_or_else(|| Error::new(ErrorKind::Other, "failed to create CFURL"))?;
+    .ok_or_else(|| Error::other("failed to create CFURL"))?;
 
-    let cf_url = create_cf_url(target.as_ref())
-        .ok_or_else(|| Error::new(ErrorKind::Other, "failed to create CFURL"))?;
+    let cf_url =
+        create_cf_url(target.as_ref()).ok_or_else(|| Error::other("failed to create CFURL"))?;
 
     let urls_v = [cf_url];
     let urls_arr = CFArray::<CFURL>::from_CFTypes(&urls_v);
@@ -78,10 +78,7 @@ pub(super) fn open_browser_internal(
                 Err(Error::new(ErrorKind::NotFound, "browser not found"))
             }
         } else {
-            Err(Error::new(
-                ErrorKind::Other,
-                "unable to convert app url to path",
-            ))
+            Err(Error::other("unable to convert app url to path"))
         };
     }
 

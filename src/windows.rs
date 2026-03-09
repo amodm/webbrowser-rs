@@ -51,10 +51,7 @@ pub(super) fn open_browser_internal(
                     &mut line_len,
                 ) != 0
                 {
-                    return Err(Error::new(
-                        ErrorKind::Other,
-                        "failed to get default browser",
-                    ));
+                    return Err(Error::other("failed to get default browser"));
                 }
 
                 let mut line_len = line_len as usize;
@@ -75,8 +72,7 @@ pub(super) fn open_browser_internal(
                 std::ffi::OsString::from_wide(&cmdline_u16[..(line_len - 1)])
                     .into_string()
                     .map_err(|_err| {
-                        Error::new(
-                            ErrorKind::Other,
+                        Error::other(
                             "The default web browser command contains invalid unicode characters",
                         )
                     })?

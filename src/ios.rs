@@ -3,7 +3,7 @@ use std::ffi::c_void;
 use objc2::{class, msg_send, rc::Retained, Encode, Encoding, MainThreadMarker};
 use objc2_foundation::{NSDictionary, NSObject, NSString, NSURL};
 
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
+use crate::{Browser, BrowserOptions, Error, Result, TargetType};
 
 /// Returns `UIApplication`
 #[allow(non_snake_case)]
@@ -50,13 +50,11 @@ pub(super) fn open_browser_internal(
         return Ok(());
     }
 
-    let mtm = MainThreadMarker::new().ok_or(Error::new(
-        ErrorKind::Other,
+    let mtm = MainThreadMarker::new().ok_or(Error::other(
         "UIApplication must be retrieved on the main thread",
     ))?;
 
-    let app = sharedApplication(mtm).ok_or(Error::new(
-        ErrorKind::Other,
+    let app = sharedApplication(mtm).ok_or(Error::other(
         "UIApplication is NULL, perhaps UIApplicationMain has not been executed?",
     ))?;
 
@@ -64,10 +62,8 @@ pub(super) fn open_browser_internal(
     let url_string = NSString::from_str(url);
     // Create NSURL object with given string
     #[allow(unused_unsafe)] // fix lint for now, eventually remove unsafe
-    let url_object = unsafe { NSURL::URLWithString(&url_string) }.ok_or(Error::new(
-        ErrorKind::Other,
-        "Failed creating NSURL; is the URL valid?",
-    ))?;
+    let url_object = unsafe { NSURL::URLWithString(&url_string) }
+        .ok_or(Error::other("Failed creating NSURL; is the URL valid?"))?;
     // empty options dictionary
     let options = NSDictionary::new();
 

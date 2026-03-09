@@ -313,7 +313,7 @@ fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
     }
 
     if config_found {
-        Err(Error::new(ErrorKind::Other, "xdg-open failed"))
+        Err(Error::other("xdg-open failed"))
     } else {
         Err(Error::new(ErrorKind::NotFound, "no valid xdg config found"))
     }
@@ -764,7 +764,7 @@ mod wsl {
 
     /// Gets the WSL distro name
     fn get_wsl_distro_name(wc: &WindowsConfig) -> Result<String> {
-        let err_fn = || Error::new(ErrorKind::Other, "unable to determine wsl distro name");
+        let err_fn = || Error::other("unable to determine wsl distro name");
 
         // mostly we should be able to get it from the WSL_DISTRO_NAME env var
         if let Ok(wsl_hostname) = std::env::var("WSL_DISTRO_NAME") {

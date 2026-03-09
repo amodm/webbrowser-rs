@@ -1,4 +1,4 @@
-use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
+use crate::{Browser, BrowserOptions, Error, Result, TargetType};
 
 /// Deal with opening a URL in wasm. This implementation ignores the browser attribute
 /// and always opens URLs in the same browser where wasm vm is running.
@@ -15,7 +15,7 @@ pub(super) fn open_browser_internal(
         if web_sys::window().is_some() {
             return Ok(());
         } else {
-            return Err(Error::new(ErrorKind::Other, "no browser window available"));
+            return Err(Error::other("no browser window available"));
         }
     }
 
@@ -26,15 +26,15 @@ pub(super) fn open_browser_internal(
                 Some(_) => Ok(()),
                 None => {
                     wasm_console_log(POPUP_ERR_MSG, options);
-                    Err(Error::new(ErrorKind::Other, POPUP_ERR_MSG))
+                    Err(Error::other(POPUP_ERR_MSG))
                 }
             },
             Err(_) => {
                 wasm_console_log("window error while opening url", options);
-                Err(Error::new(ErrorKind::Other, "error opening url"))
+                Err(Error::other("error opening url"))
             }
         },
-        None => Err(Error::new(ErrorKind::Other, "no browser window available")),
+        None => Err(Error::other("no browser window available")),
     }
 }
 

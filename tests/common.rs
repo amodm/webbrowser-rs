@@ -1,7 +1,6 @@
 use actix_files as fs;
 use actix_web::{web, App, HttpRequest, HttpResponse, HttpServer, Responder};
 use crossbeam_channel as cbc;
-use rand::RngCore;
 use std::{io::Write, path::PathBuf, sync::Arc};
 use urlencoding::decode;
 use webbrowser::{open_browser, Browser};
@@ -108,7 +107,7 @@ where
     let cwd = std::env::current_dir().expect("unable to determine current dir");
     let tmpdir = cwd.join("target").join("tmp");
     let html_dir = html_dir.unwrap_or(tmpdir);
-    let id = rand::thread_rng().next_u32();
+    let id: u32 = rand::random();
     let pb = html_dir.join(format!("test.{id}.html"));
     let img_uri = format!("{URI_PNG_1PX}?r={id}");
     check_request_received_using(img_uri, "127.0.0.1", |uri, _port| {

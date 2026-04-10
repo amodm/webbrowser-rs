@@ -57,8 +57,22 @@ pub(super) fn open_browser_internal(
                     ));
                 }
 
+                let mut line_len = line_len as usize;
+
+                // If line_len wasn't updated, this might be a broken AssocQueryStringW() implementation in wine:
+                // https://bugs.winehq.org/show_bug.cgi?id=59402
+                // In that case, find the NUL terminator ourselves.
+                if line_len == BUF_SIZE {
+                    if let Some(found_nul) = cmdline_u16.iter().position(|&c| c == 0) {
+                        trace!(
+                            "Broken AssocQueryStringW(), manually string length determined at {found_nul}"
+                        );
+                        line_len = found_nul + 1;
+                    }
+                }
+
                 use std::os::windows::ffi::OsStringExt;
-                std::ffi::OsString::from_wide(&cmdline_u16[..(line_len - 1) as usize])
+                std::ffi::OsString::from_wide(&cmdline_u16[..(line_len - 1)])
                     .into_string()
                     .map_err(|_err| {
                         Error::new(

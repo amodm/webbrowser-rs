@@ -492,17 +492,16 @@ mod tests_xdg {
                 if [ "$1" != "p1" ]; then
                     echo "1st parameter should've been p1" >&2
                     exit 1
-                elif [ "$2" != "{}" ]; then
-                    echo "2nd parameter should've been {}" >&2
+                elif [ "$2" != "{txt_path}" ]; then
+                    echo "2nd parameter should've been {txt_path}" >&2
                     exit 1
                 elif [ "$3" != "p3" ]; then
                     echo "3rd parameter should've been p3" >&2
                     exit 1
                 fi
 
-                echo "$2" > "{}"
-            "#,
-                &txt_path, &txt_path, &flag_path
+                echo "$2" > "{flag_path}"
+            "#
             ));
             let mut perms = browser_file
                 .metadata()
@@ -520,12 +519,11 @@ mod tests_xdg {
             let _ = xdg_file.write_fmt(format_args!(
                 r#"# this line should be ignored
 [Desktop Entry]
-Exec={} p1 %u p3
+Exec={browser_path} p1 %u p3
 [Another Entry]
 Exec=/bin/ls
 # the above Exec line should be getting ignored
-            "#,
-                &browser_path
+            "#
             ));
         }
 

@@ -71,7 +71,7 @@ pub(crate) fn run_command(
         .spawn()
         .map(|_| ())
     } else {
-        debug!("foreground exec: {:?}", &cmd);
+        debug!("foreground exec: {cmd:?}");
         // if we're in foreground, use status() instead of spawn(), as we'd like to wait
         // till completion.
         // We also specifically don't suppress anything here, because we're running here

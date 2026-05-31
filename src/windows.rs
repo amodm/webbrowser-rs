@@ -77,7 +77,7 @@ pub(super) fn open_browser_internal(
                         )
                     })?
             };
-            trace!("default browser command: {}", &cmdline);
+            trace!("default browser command: {cmdline}");
             let cmdline = ensure_cmd_quotes(&cmdline);
             let mut cmd = get_browser_cmd(&cmdline, target)?;
             run_command(&mut cmd, true, options)

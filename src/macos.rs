@@ -34,7 +34,7 @@ pub(super) fn open_browser_internal(
                     create_cf_url(DEFAULT_BROWSER_URL)
                 } else {
                     let cf_url = unsafe { CFURL::wrap_under_create_rule(result) };
-                    log::trace!("default browser is {:?}", &cf_url);
+                    log::trace!("default browser is {cf_url:?}");
                     Some(cf_url)
                 }
             } else {
@@ -71,10 +71,10 @@ pub(super) fn open_browser_internal(
     if options.dry_run {
         return if let Some(path) = browser_cf_url.to_path() {
             if path.is_dir() {
-                log::debug!("dry-run: not actually opening the browser {}", &browser);
+                log::debug!("dry-run: not actually opening the browser {browser}");
                 Ok(())
             } else {
-                log::debug!("dry-run: browser {} not found", &browser);
+                log::debug!("dry-run: browser {browser} not found");
                 Err(Error::new(ErrorKind::NotFound, "browser not found"))
             }
         } else {
@@ -83,7 +83,7 @@ pub(super) fn open_browser_internal(
     }
 
     // launch the browser
-    log::trace!("about to start browser: {} for {}", &browser, &target);
+    log::trace!("about to start browser: {browser} for {target}");
     let mut launched_app: CFURLRef = std::ptr::null_mut();
     let status = unsafe { LSOpenFromURLSpec(&spec, &mut launched_app) };
     log::trace!("received status: {status}");

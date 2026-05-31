@@ -280,7 +280,7 @@ fn try_xdg(options: &BrowserOptions, url: &str) -> Result<()> {
     if browser_name.is_empty() {
         return Err(Error::new(ErrorKind::NotFound, "no default xdg browser"));
     }
-    trace!("found xdg browser: {:?}", &browser_name);
+    trace!("found xdg browser: {browser_name:?}");
 
     // search for the config file corresponding to this browser name
     let mut config_found = false;
@@ -645,7 +645,7 @@ mod wsl {
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::null());
-        log::debug!("running command: ${:?}", &cmd);
+        log::debug!("running command: ${cmd:?}");
         let mut child = cmd.spawn()?;
 
         let mut stdin = child.stdin.take().ok_or_else(err_fn)?;
@@ -674,7 +674,7 @@ mod wsl {
             .stdin(Stdio::null())
             .stdout(Stdio::piped())
             .stderr(Stdio::null());
-        log::debug!("running command: ${:?}", &cmd);
+        log::debug!("running command: ${cmd:?}");
         let output_u8 = cmd.output()?;
 
         let output = String::from_utf8_lossy(&output_u8.stdout);
@@ -754,8 +754,7 @@ mod wsl {
             // windows needs to access it via network
             let wsl_hostname = get_wsl_distro_name(wc)?;
             Ok(format!(
-                "\\\\wsl$\\{}{}",
-                &wsl_hostname,
+                "\\\\wsl$\\{wsl_hostname}{}",
                 path.as_os_str().to_string_lossy()
             )
             .replace('/', "\\"))
@@ -782,7 +781,7 @@ mod wsl {
                 .current_dir("/")
                 .stdin(Stdio::null())
                 .stderr(Stdio::null());
-            log::debug!("running command: ${:?}", &cmd);
+            log::debug!("running command: ${cmd:?}");
             let output_u8 = cmd.output()?.stdout;
             let output = String::from_utf8_lossy(&output_u8);
             let output = output.trim_end_matches('\\');

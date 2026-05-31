@@ -63,7 +63,7 @@ where
             .default_service(web::to(log_handler))
     })
     .bind(&bind_addr)
-    .unwrap_or_else(|_| panic!("Can not bind to {}", &bind_addr));
+    .unwrap_or_else(|_| panic!("Can not bind to {bind_addr}"));
 
     let port = http_server
         .addrs()
@@ -76,7 +76,7 @@ where
     tokio::spawn(server);
 
     // invoke the op
-    op(&format!("http://{}:{}{}", host, port, &uri), port);
+    op(&format!("http://{host}:{port}{uri}"), port);
 
     // wait for the url to be hit
     let timeout = option_env!("TEST_REQ_TIMEOUT")
@@ -115,10 +115,8 @@ where
         let mut html_file = std::fs::File::create(&pb).expect("failed to create html file");
         html_file
             .write_fmt(format_args!(
-                "<p>html file: {}</p><p>url: {}</p>img: <img src=\"{}\"/>",
-                &pb.as_os_str().to_string_lossy(),
-                url,
-                uri
+                "<p>html file: {}</p><p>url: {url}</p>img: <img src=\"{uri}\"/>",
+                pb.as_os_str().to_string_lossy()
             ))
             .expect("failed to write html file");
         drop(html_file);

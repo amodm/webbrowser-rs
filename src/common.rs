@@ -53,12 +53,12 @@ pub(crate) fn run_command(
     // if dry_run, we return a true, as executable existence check has
     // already been done
     if options.dry_run {
-        debug!("dry-run enabled, so not running: {:?}", &cmd);
+        debug!("dry-run enabled, so not running: {cmd:?}");
         return Ok(());
     }
 
     if background {
-        debug!("background spawn: {:?}", &cmd);
+        debug!("background spawn: {cmd:?}");
         // if we're in background, set stdin/stdout to null and spawn a child, as we're
         // not supposed to have any interaction.
         if options.suppress_output {

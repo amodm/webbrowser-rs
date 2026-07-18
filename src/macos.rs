@@ -64,12 +64,14 @@ pub(super) fn open_browser_internal(
             &config,
         )
     };
-    result.map(|_running_app| ()).map_err(map_launch_error)
+    result
+        .map(|_running_app| ())
+        .map_err(|err| map_launch_error(&err))
 }
 
 /// Maps an `NSError` returned while launching the browser to our [`Error`] type,
 /// preserving the `NotFound`/`PermissionDenied` distinctions where possible.
-fn map_launch_error(err: objc2::rc::Retained<NSError>) -> Error {
+fn map_launch_error(err: &NSError) -> Error {
     // For the `NSOSStatusErrorDomain`, `code` is the underlying Launch Services
     // `OSStatus`. See the `Result Codes` section of:
     // https://developer.apple.com/documentation/coreservices/launch_services

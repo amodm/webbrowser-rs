@@ -26,7 +26,19 @@ disable-wsl = []
 wasm-console = ["web-sys/console"]
 
 [target.'cfg(target_os = "macos")'.dependencies]
-core-foundation = "0.10"
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", default-features = false, features = [
+    "std",
+    "NSArray",
+    "NSString",
+    "NSURL",
+] }
+objc2-app-kit = { version = "0.3", default-features = false, features = [
+    "std",
+    "block2",
+    "NSWorkspace",
+    "NSRunningApplication",
+] }
 
 [target.'cfg(target_os = "android")'.dependencies]
 jni = "0.22.2"

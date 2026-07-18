@@ -55,7 +55,7 @@ pub(super) fn open_browser_internal(
     let config = NSDictionary::new();
 
     // launch the browser
-    log::trace!("about to start browser: {browser} for {target}");
+    log::trace!("about to start browser: {browser} for {target} using app at {app_url:?}");
     let result = unsafe {
         workspace.openURLs_withApplicationAtURL_options_configuration_error(
             &urls,
@@ -64,9 +64,18 @@ pub(super) fn open_browser_internal(
             &config,
         )
     };
-    result
-        .map(|_running_app| ())
-        .map_err(|err| map_launch_error(&err))
+    match result {
+        Ok(running_app) => {
+            log::trace!(
+                "launched {browser}: bundle_id={:?}, url={:?}, finished_launching={}",
+                running_app.bundleIdentifier(),
+                running_app.bundleURL(),
+                running_app.isFinishedLaunching(),
+            );
+            Ok(())
+        }
+        Err(err) => Err(map_launch_error(&err)),
+    }
 }
 
 /// Maps an `NSError` returned while launching the browser to our [`Error`] type,

@@ -31,6 +31,25 @@ jobs:
           rustup component add --toolchain ${{ matrix.rust }} rustfmt clippy
       - name: Compile
         run: cargo +${{ matrix.rust }} build
+      - name: Warm up Chrome (leave a flagged instance running for the tests)
+        # On the Sequoia runner, a cold GUI Chrome launched via LaunchServices
+        # never gets past its first-run flow to navigate to the URL (verified:
+        # headless Chrome with automation flags reaches a local server, but a
+        # cold LaunchServices open does not - and LaunchServices can't pass those
+        # flags). So we start a persistent Chrome instance here WITH the flags and
+        # leave it running; when test_open_chrome does its LaunchServices open,
+        # the URL is handed to this already-initialised instance, which navigates
+        # normally. Launched in the background so this step can't hang on a modal,
+        # and deliberately NOT killed so it survives into the test step.
+        run: |
+          nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+            --no-first-run --no-default-browser-check \
+            --use-mock-keychain --password-store=basic \
+            about:blank >chrome-warmup.log 2>&1 &
+          disown || true
+          sleep 10
+          echo "Chrome warm-up launched; running processes:"
+          ps ax -o pid,command | grep -i "[G]oogle Chrome" | head -5 || echo "none"
       - name: Run Tests
         run: cargo +${{ matrix.rust }} test --locked --verbose --test test_macos -- --include-ignored
       - name: Run Tests (hardened)

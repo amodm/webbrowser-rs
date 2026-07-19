@@ -118,10 +118,11 @@ fn ensure_cmd_quotes(cmdline: &str) -> String {
 /// Given the configured command line `cmdline` in registry, and the given `url`,
 /// return the appropriate `Command` to invoke
 fn get_browser_cmd(cmdline: &str, url: &TargetType) -> Result<Command> {
+    let url_arg = unc_aware_url_arg(url);
     let mut tokens: Vec<String> = Vec::new();
     for_each_token(cmdline, |token: &str| {
         if matches!(token, "%0" | "%1") {
-            tokens.push(url.to_string());
+            tokens.push(url_arg.clone());
         } else {
             tokens.push(token.to_string());
         }
@@ -134,5 +135,61 @@ fn get_browser_cmd(cmdline: &str, url: &TargetType) -> Result<Command> {
             cmd.args(&tokens[1..]);
         }
         Ok(cmd)
+    }
+}
+
+/// Return the string to hand to the browser for `target`.
+///
+/// For a Windows UNC path like `\\server\share\file.html`, the `url` crate produces the
+/// authority form `file://server/share/file.html`. Browsers on Windows don't resolve that
+/// back to the UNC path (Chrome drops the host, yielding `file:///share/file.html`), so we
+/// rewrite it to the `file://///server/share/file.html` form, which they do resolve to
+/// `\\server\share\file.html`. `url::Url` can't hold that form itself (it normalizes the
+/// leading slashes away), so we build it here at the point of use.
+///
+/// See https://github.com/amodm/webbrowser-rs/issues/116
+fn unc_aware_url_arg(target: &TargetType) -> String {
+    let url = &target.0;
+    match url.host_str() {
+        // only file URLs with a non-empty host correspond to UNC paths; local drive
+        // paths (`C:\...`) have no host, and http(s) urls are excluded by the scheme check
+        Some(host) if url.scheme() == "file" && !host.is_empty() => {
+            format!("file://///{host}{}", url.path())
+        }
+        _ => target.to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A UNC path must be handed to the browser in the `file://///server/share/...` form
+    /// so it resolves back to `\\server\share\...`. See issue #116.
+    #[test]
+    fn unc_path_uses_five_slash_form() {
+        let target = TargetType::try_from(r"\\my-server.company.local\share\dir\report.html")
+            .expect("failed to convert UNC path");
+        assert_eq!(
+            unc_aware_url_arg(&target),
+            "file://///my-server.company.local/share/dir/report.html"
+        );
+    }
+
+    /// A local drive path has no host and must be left as the regular `file:///C:/...` form.
+    #[test]
+    fn local_drive_path_is_unchanged() {
+        let target = TargetType::try_from(r"C:\dir\report.html").expect("failed to convert path");
+        let arg = unc_aware_url_arg(&target);
+        assert!(arg.starts_with("file:///C:/"), "unexpected arg: {arg}");
+        assert_eq!(arg, target.to_string());
+    }
+
+    /// http(s) urls must pass through untouched.
+    #[test]
+    fn http_url_is_unchanged() {
+        let target = TargetType::try_from("https://github.com/amodm/webbrowser-rs")
+            .expect("failed to parse url");
+        assert_eq!(unc_aware_url_arg(&target), target.to_string());
     }
 }

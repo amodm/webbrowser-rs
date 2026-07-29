@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.2] - 2026-07-29 <a name="1.2.2"></a>
+### Fixed
+- Unix: Fix the way BROWSER env var is handled. See #119
+- macOS: Move to objc2. See #117.
+
 ## [1.2.1] - 2026-04-16 <a name="1.2.1"></a>
 ### Fixed
 - Windows: work around broken AssocQueryStringW() not returning actual string length. See #114
@@ -233,7 +238,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.1...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.2...HEAD
+[1.2.2]: https://github.com/amodm/webbrowser-rs/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/amodm/webbrowser-rs/compare/v1.2.0...v1.2.1
 [1.2.0]: https://github.com/amodm/webbrowser-rs/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/amodm/webbrowser-rs/compare/v1.0.6...v1.1.0

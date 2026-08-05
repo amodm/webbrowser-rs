@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.4] - 2026-08-04 <a name="1.2.4"></a>
+### Fixed
+- Unix: Avoid redundant url addition to BROWSER env based command. See #120
+- Unix: Fix the sequence in which BROWSER fields are substituted. See #121
+
 ## [1.2.3] - 2026-08-03 <a name="1.2.3"></a>
 ### Fixed
 - Windows: Fix UNC paths where host names are involved. See #116
@@ -242,7 +247,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.3...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.4...HEAD
+[1.2.4]: https://github.com/amodm/webbrowser-rs/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/amodm/webbrowser-rs/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/amodm/webbrowser-rs/compare/v1.2.1...v1.2.2
 [1.2.1]: https://github.com/amodm/webbrowser-rs/compare/v1.2.0...v1.2.1

@@ -121,22 +121,16 @@ fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
 /// - `%s` is replaced with the provided `url`.
 /// - `%c` is replaced with `:`.
 /// - `%%` is replaced with `%`.
+///
+/// If none of the options had a `%s` in them, `url` is appended as the last option, so that
+/// it's always passed to the browser exactly once. See issue #120
 fn browser_env_cmd_arr(browser_env: &str, url: &str) -> Vec<String> {
     let mut url_set = false;
     let mut arr: Vec<String> = browser_env
         .split_ascii_whitespace()
         .map(|opt| {
-            let mut val = opt.to_string();
-            if opt.contains("%s") {
-                url_set = true;
-                val = opt.replace("%s", url);
-            }
-            if opt.contains("%c") {
-                val = opt.replace("%c", ":");
-            }
-            if opt.contains("%%") {
-                val = opt.replace("%%", "%");
-            }
+            let (val, has_url) = expand_field_codes(opt, url);
+            url_set |= has_url;
             val
         })
         .collect();
@@ -144,6 +138,40 @@ fn browser_env_cmd_arr(browser_env: &str, url: &str) -> Vec<String> {
         arr.push(url.to_string());
     }
     arr
+}
+
+/// Expand the field codes inside a single BROWSER option `opt`, returning the expanded option,
+/// and whether it had a `%s` in it.
+///
+/// We expand in a single left to right pass, instead of one [str::replace] per field code, so
+/// that each `%` is consumed by exactly one expansion. Doing it otherwise would make an option
+/// like `--url=%s%%` lose either its `%s` or its `%%` expansion, and would also make the text
+/// coming in from `url` liable to be scanned for field codes.
+fn expand_field_codes(opt: &str, url: &str) -> (String, bool) {
+    let mut val = String::with_capacity(opt.len());
+    let mut url_set = false;
+    let mut chars = opt.chars();
+    while let Some(ch) = chars.next() {
+        if ch != '%' {
+            val.push(ch);
+            continue;
+        }
+        match chars.next() {
+            Some('s') => {
+                val.push_str(url);
+                url_set = true;
+            }
+            Some('c') => val.push(':'),
+            Some('%') => val.push('%'),
+            // we leave unknown field codes untouched
+            Some(other) => {
+                val.push('%');
+                val.push(other);
+            }
+            None => val.push('%'),
+        }
+    }
+    (val, url_set)
 }
 
 /// Check if we are inside WSL on Windows, and interoperability with Windows tools is
@@ -917,6 +945,42 @@ mod tests_browser_env {
         assert_eq!(cmdarr[3], url);
     }
 
+    /// An option can hold more than one field code, and each `%` must be consumed by exactly
+    /// one expansion, so that no expansion undoes another
+    #[test]
+    fn test_multiple_field_codes_in_one_option() {
+        let url = "https://github.com/amodm/webbrowser-rs";
+        let cmdarr = browser_env_cmd_arr("firefox --url=%s%% --other=%s%c9222", url);
+        assert_eq!(cmdarr.len(), 3);
+        assert_eq!(cmdarr[0], "firefox");
+        assert_eq!(cmdarr[1], format!("--url={url}%"));
+        assert_eq!(cmdarr[2], format!("--other={url}:9222"));
+    }
+
+    /// `%%s` is an escaped `%` followed by an `s`, and not a url placeholder, so the url still
+    /// needs to be passed separately
+    #[test]
+    fn test_escaped_url_field_code() {
+        let url = "https://github.com/amodm/webbrowser-rs";
+        let cmdarr = browser_env_cmd_arr("firefox --x=%%s --y=%z --z=100%", url);
+        assert_eq!(cmdarr.len(), 5);
+        assert_eq!(cmdarr[0], "firefox");
+        assert_eq!(cmdarr[1], "--x=%s");
+        // unknown field codes, and a trailing %, are left as they are
+        assert_eq!(cmdarr[2], "--y=%z");
+        assert_eq!(cmdarr[3], "--z=100%");
+        assert_eq!(cmdarr[4], url);
+    }
+
+    /// Field codes in the url itself must never get expanded
+    #[test]
+    fn test_url_is_not_scanned_for_field_codes() {
+        let url = "https://example.com/%cf%80?a=100%%";
+        let cmdarr = browser_env_cmd_arr("firefox --url=%s", url);
+        assert_eq!(cmdarr.len(), 2);
+        assert_eq!(cmdarr[1], format!("--url={url}"));
+    }
+
     /// Sets `$BROWSER` to `browser_env_tmpl` (with `{}` in it replaced by the path of a script
     /// that records the argv it receives), opens `url` with it, and returns the recorded argv
     fn record_argv(name: &str, browser_env_tmpl: &str, url: &str) -> Vec<String> {
@@ -992,6 +1056,14 @@ for arg in "$@"; do echo "$arg"; done > "{flag_path}"
         assert_eq!(
             record_argv("test_be_app", "{} --app=%s", url),
             vec![format!("--app={url}")]
+        );
+        assert_eq!(
+            record_argv("test_be_mixed", "{} --app=%s%%", url),
+            vec![format!("--app={url}%")]
+        );
+        assert_eq!(
+            record_argv("test_be_esc", "{} --x=%%s", url),
+            vec!["--x=%s".to_string(), url.to_string()]
         );
     }
 

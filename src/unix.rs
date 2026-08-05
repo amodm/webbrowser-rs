@@ -103,10 +103,6 @@ fn try_with_browser_env(url: &str, options: &BrowserOptions) -> Result<()> {
                 for arg in cmdarr.iter().skip(1) {
                     cmd.arg(arg);
                 }
-                if !browser_env.contains("%s") {
-                    // append the url as an argument only if it was not already set via %s
-                    cmd.arg(url);
-                }
                 run_command(&mut cmd, !is_text_browser(pb), options)
             });
             if env_exit.is_ok() {
@@ -488,7 +484,7 @@ mod tests_xdg {
     use std::fs::File;
     use std::io::Write;
 
-    fn get_temp_path(name: &str, suffix: &str) -> String {
+    pub(super) fn get_temp_path(name: &str, suffix: &str) -> String {
         let pid = std::process::id();
         std::env::temp_dir()
             .join(format!("{name}.{pid}.{suffix}"))
@@ -884,7 +880,11 @@ Write-Output $([Win32Api]::GetDefaultBrowser())
 
 #[cfg(test)]
 mod tests_browser_env {
+    use super::tests_xdg::get_temp_path;
     use super::*;
+    use serial_test::serial;
+    use std::fs::File;
+    use std::io::Write;
 
     #[test]
     fn test_basic_substitution() {
@@ -915,5 +915,102 @@ mod tests_browser_env {
         assert_eq!(cmdarr[1], "--option1");
         assert_eq!(cmdarr[2], "--option2");
         assert_eq!(cmdarr[3], url);
+    }
+
+    /// Sets `$BROWSER` to `browser_env_tmpl` (with `{}` in it replaced by the path of a script
+    /// that records the argv it receives), opens `url` with it, and returns the recorded argv
+    fn record_argv(name: &str, browser_env_tmpl: &str, url: &str) -> Vec<String> {
+        let flag_path = get_temp_path(name, "flag");
+        let _ = std::fs::remove_file(&flag_path);
+
+        // create a browser script which records each arg it got on its own line
+        let browser_path = get_temp_path(name, "browser");
+        {
+            let mut browser_file =
+                File::create(&browser_path).expect("failed to create browser file");
+            browser_file
+                .write_fmt(format_args!(
+                    r#"#!/bin/sh
+for arg in "$@"; do echo "$arg"; done > "{flag_path}"
+"#
+                ))
+                .expect("failed to write browser file");
+            let mut perms = browser_file
+                .metadata()
+                .expect("failed to get permissions")
+                .permissions();
+            perms.set_mode(0o755);
+            let _ = browser_file.set_permissions(perms);
+        }
+
+        // we go through $BROWSER (instead of invoking the browser directly), as that's the
+        // path on which the url gets assembled into the command line
+        let browser_env = browser_env_tmpl.replace("{}", &browser_path);
+        let prev_browser_env = std::env::var_os("BROWSER");
+        std::env::set_var("BROWSER", &browser_env);
+        let result = try_with_browser_env(url, &BrowserOptions::default());
+        match prev_browser_env {
+            Some(prev) => std::env::set_var("BROWSER", prev),
+            None => std::env::remove_var("BROWSER"),
+        }
+        assert!(result.is_ok(), "failed to run {browser_env:?}: {result:?}");
+
+        // the script runs in the background, so wait for it to write the flag file
+        let mut recorded: Option<String> = None;
+        for _ in 0..20 {
+            if let Ok(contents) = std::fs::read_to_string(&flag_path) {
+                recorded = Some(contents);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(250));
+        }
+
+        let _ = std::fs::remove_file(&flag_path);
+        let _ = std::fs::remove_file(&browser_path);
+
+        recorded
+            .expect("flag file not found")
+            .lines()
+            .map(|l| l.to_owned())
+            .collect()
+    }
+
+    /// The browser must receive the url exactly once, regardless of how (or whether) the
+    /// BROWSER entry positions it via %s. See issue #120
+    #[test]
+    #[serial]
+    fn test_url_passed_exactly_once() {
+        let _ = env_logger::try_init();
+        let url = "https://github.com/amodm/webbrowser-rs?a=1";
+
+        assert_eq!(record_argv("test_be_plain", "{}", url), vec![url]);
+        assert_eq!(
+            record_argv("test_be_opts", "{} --option1", url),
+            vec!["--option1", url]
+        );
+        assert_eq!(record_argv("test_be_s", "{} %s", url), vec![url]);
+        assert_eq!(
+            record_argv("test_be_app", "{} --app=%s", url),
+            vec![format!("--app={url}")]
+        );
+    }
+
+    /// A url which keeps its spaces even after being parsed (e.g. one with a non http(s)
+    /// scheme) must not be able to add argv entries of its own. See GHSA-2ph8-5cr8-hr33
+    #[test]
+    #[serial]
+    fn test_url_with_spaces_is_one_arg() {
+        let _ = env_logger::try_init();
+        let target =
+            TargetType::try_from("about:blank --remote-debugging-port=9222").expect("bad url");
+        let url: &str = &target;
+        assert!(url.contains(' '), "test url must have spaces, got {url:?}");
+
+        assert_eq!(record_argv("test_be_sp_s", "{} %s", url), vec![url]);
+        assert_eq!(
+            record_argv("test_be_sp_app", "{} --app=%s", url),
+            vec![format!("--app={url}")]
+        );
+        assert_eq!(record_argv("test_be_sp_plain", "{}", url), vec![url]);
     }
 }

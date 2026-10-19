@@ -57,7 +57,7 @@ jobs:
           - target: i686-pc-windows-gnu
             host: x86_64-pc-windows-gnu
             rust: stable
-            rustflags: -C linker=rust-lld -C link-self-contained=yes
+            rustflags: -C linker=gcc -C link-self-contained=no
           - target: i686-pc-windows-msvc
             host: x86_64-pc-windows-msvc
             rust: stable
@@ -74,7 +74,19 @@ jobs:
         name: Checkout
       - name: Install Rust toolchain and target
         run: rustup toolchain install ${{ matrix.rust }}-${{ matrix.host }} --profile minimal --target ${{ matrix.target }}
+      # i686 GNU needs MinGW's compiler/runtime libraries; the self-contained
+      # bundled-LLD regression is covered by the x86_64 GNU jobs instead.
+      - name: Install 32-bit MinGW
+        if: matrix.target == 'i686-pc-windows-gnu'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW32
+          install: mingw-w64-i686-gcc
+      - name: Add 32-bit MinGW to PATH
+        if: matrix.target == 'i686-pc-windows-gnu'
+        shell: msys2 {0}
+        run: cygpath -w /mingw32/bin >> "$GITHUB_PATH"
       # This small downstream crate avoids GUI tests and dev-dependencies.
-      # GNU jobs must link without an external libshlwapi.a search path.
+      # x86_64 GNU jobs must link without an external libshlwapi.a search path.
       - name: Build and run Windows link smoke test
         run: cargo +${{ matrix.rust }}-${{ matrix.host }} run --manifest-path tests/windows-link/Cargo.toml --target ${{ matrix.target }}

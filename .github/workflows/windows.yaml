@@ -42,3 +42,35 @@ jobs:
       - name: Lints
         if: ${{ matrix.rust == 'stable' || matrix.rust == 'beta' }}
         run: cargo +${{ matrix.rust }} clippy --all-targets -- -D warnings
+
+  link:
+    name: Link (${{ matrix.target }}, Rust ${{ matrix.rust }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: x86_64-pc-windows-gnu
+            rust: stable
+            rustflags: -C linker=rust-lld -C link-self-contained=yes
+          - target: i686-pc-windows-gnu
+            rust: stable
+            rustflags: -C linker=rust-lld -C link-self-contained=yes
+          - target: i686-pc-windows-msvc
+            rust: stable
+            rustflags: ''
+          - target: x86_64-pc-windows-gnu
+            rust: '1.85.0'
+            rustflags: -C linker=rust-lld -C link-self-contained=yes
+    env:
+      RUSTFLAGS: ${{ matrix.rustflags }}
+      CARGO_RESOLVER_INCOMPATIBLE_RUST_VERSIONS: fallback
+    steps:
+      - uses: actions/checkout@v3
+        name: Checkout
+      - name: Install native Rust toolchain
+        run: rustup toolchain install ${{ matrix.rust }}-${{ matrix.target }} --profile minimal
+      # This small downstream crate avoids GUI tests and dev-dependencies.
+      # GNU jobs must link without an external libshlwapi.a search path.
+      - name: Build and run Windows link smoke test
+        run: cargo +${{ matrix.rust }}-${{ matrix.target }} run --manifest-path tests/windows-link/Cargo.toml --target ${{ matrix.target }}

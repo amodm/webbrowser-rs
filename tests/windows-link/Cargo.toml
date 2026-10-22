@@ -1,0 +1,11 @@
+[package]
+name = "windows-link-smoke"
+version = "0.0.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+
+[dependencies]
+webbrowser = { path = "../.." }
+
+[workspace]

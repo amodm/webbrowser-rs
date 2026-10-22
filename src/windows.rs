@@ -7,7 +7,13 @@ use std::process::Command;
 const ASSOCF_IS_PROTOCOL: u32 = 0x00001000;
 const ASSOCSTR_COMMAND: i32 = 1;
 
-#[link(name = "shlwapi")]
+// Generate the import library instead of requiring MinGW's libshlwapi.a.
+// Win32 DLL exports are undecorated, including for x86 stdcall functions.
+#[cfg_attr(
+    target_arch = "x86",
+    link(name = "shlwapi", kind = "raw-dylib", import_name_type = "undecorated")
+)]
+#[cfg_attr(not(target_arch = "x86"), link(name = "shlwapi", kind = "raw-dylib"))]
 extern "system" {
     fn AssocQueryStringW(
         flags: u32,

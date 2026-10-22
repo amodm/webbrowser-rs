@@ -3,6 +3,10 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.5] - 2026-10-22 <a name="1.2.5"></a>
+### Fixed
+- Windows: use raw-dylib for shlwapi to fix GNU/LLD linking. See #123
+
 ## [1.2.4] - 2026-08-04 <a name="1.2.4"></a>
 ### Fixed
 - Unix: Avoid redundant url addition to BROWSER env based command. See #120
@@ -247,7 +251,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.4...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.5...HEAD
+[1.2.5]: https://github.com/amodm/webbrowser-rs/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/amodm/webbrowser-rs/compare/v1.2.3...v1.2.4
 [1.2.3]: https://github.com/amodm/webbrowser-rs/compare/v1.2.2...v1.2.3
 [1.2.2]: https://github.com/amodm/webbrowser-rs/compare/v1.2.1...v1.2.2

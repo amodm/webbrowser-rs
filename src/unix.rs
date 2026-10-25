@@ -243,22 +243,34 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
     match target.0.scheme() {
         "http" | "https" => {
             let url: &str = target;
-            try_browser!(
-                options,
-                "cmd.exe",
-                "/c",
-                "start",
-                url.replace('^', "^^").replace('&', "^&")
-            )
-            .or_else(|_| {
-                try_browser!(
-                    options,
-                    "powershell.exe",
-                    "Start",
-                    url.replace('&', "\"&\"")
-                )
-            })
-            .or_else(|_| try_browser!(options, "wsl-open", url))
+            // A serialized http(s) url should never contains whitespace, quotes or control
+            // chars. We ensure this here, so that the next step can flatten argv into a single
+            // Windows command line, and only quotes args which contain such chars.
+            if url
+                .chars()
+                .any(|c| c.is_whitespace() || c.is_control() || c == '"')
+            {
+                return Err(Error::new(ErrorKind::InvalidInput, "invalid url"));
+            }
+
+            // We first use rundll32 because it'd invoke the FileProtocolHandler,
+            // which calls ShellExecute on it without involving any shell.
+            try_browser!(options, "rundll32.exe", "url.dll,FileProtocolHandler", url)
+                // fallback: powershell, with the url embedded as a single-quoted string
+                // literal inside a base64 -EncodedCommand. The command line only ever
+                // contains [A-Za-z0-9+/=], and PowerShell never evaluates the url.
+                .or_else(|_| {
+                    try_browser!(
+                        options,
+                        "powershell.exe",
+                        "-NoLogo",
+                        "-NoProfile",
+                        "-NonInteractive",
+                        "-EncodedCommand",
+                        wsl_ps_encoded_start(url)
+                    )
+                })
+                .or_else(|_| try_browser!(options, "wsl-open", url))
         }
         #[cfg(all(
             target_os = "linux",
@@ -278,6 +290,55 @@ fn try_wsl(options: &BrowserOptions, target: &TargetType) -> Result<()> {
         }
         _ => Err(Error::new(ErrorKind::NotFound, "invalid browser")),
     }
+}
+
+/// Return a base64 (UTF-16LE) encoded PowerShell command, suitable for use with
+/// `powershell.exe -EncodedCommand`, which opens `url` via `Start-Process`.
+///
+/// The url is embedded as a single-quoted (verbatim) string literal, in which the
+/// only special character is `'` (escaped by doubling). PowerShell also treats the
+/// unicode quotes U+2018..U+201B as single quotes, so we double those too, even
+/// though a serialized url (always ASCII) should never contain them.
+fn wsl_ps_encoded_start(url: &str) -> String {
+    let mut literal = String::with_capacity(url.len() + 2);
+    literal.push('\'');
+    for c in url.chars() {
+        if matches!(c, '\'' | '\u{2018}' | '\u{2019}' | '\u{201A}' | '\u{201B}') {
+            literal.push(c);
+        }
+        literal.push(c);
+    }
+    literal.push('\'');
+    let script = format!("Start-Process -FilePath {literal}");
+    let utf16le: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
+    base64_encode(&utf16le)
+}
+
+/// Minimal standard base64 encoder (with padding), to avoid pulling in a dependency.
+fn base64_encode(input: &[u8]) -> String {
+    const TABLE: &[u8; 64] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+    let mut out = String::with_capacity(input.len().div_ceil(3) * 4);
+    for chunk in input.chunks(3) {
+        let b = [
+            chunk[0],
+            *chunk.get(1).unwrap_or(&0),
+            *chunk.get(2).unwrap_or(&0),
+        ];
+        let n = (u32::from(b[0]) << 16) | (u32::from(b[1]) << 8) | u32::from(b[2]);
+        out.push(TABLE[(n >> 18) as usize & 63] as char);
+        out.push(TABLE[(n >> 12) as usize & 63] as char);
+        out.push(if chunk.len() > 1 {
+            TABLE[(n >> 6) as usize & 63] as char
+        } else {
+            '='
+        });
+        out.push(if chunk.len() > 2 {
+            TABLE[n as usize & 63] as char
+        } else {
+            '='
+        });
+    }
+    out
 }
 
 /// Open browser in Flatpak environments
@@ -1084,5 +1145,143 @@ for arg in "$@"; do echo "$arg"; done > "{flag_path}"
             vec![format!("--app={url}")]
         );
         assert_eq!(record_argv("test_be_sp_plain", "{}", url), vec![url]);
+    }
+}
+
+#[cfg(test)]
+mod tests_wsl_http {
+    use super::tests_xdg::get_temp_path;
+    use super::*;
+    use serial_test::serial;
+    use std::convert::TryFrom;
+
+    /// payloads from GHSA-j2mc-vg6q-w75p, plus powershell specific ones
+    const PAYLOADS: &[&str] = &[
+        "https://github.com/amodm/webbrowser-rs|calc",
+        "https://github.com/amodm/webbrowser-rs?x=1|calc",
+        "https://github.com/amodm/webbrowser-rs#x|calc",
+        "https://github.com/amodm/webbrowser-rs/?q=%USERNAME%",
+        "https://github.com/amodm/webbrowser-rs/(calc)",
+        "https://github.com/amodm/webbrowser-rs;calc",
+        "https://github.com/amodm/webbrowser-rs/$(calc)",
+        "https://github.com/amodm/webbrowser-rs/?a={1}`b",
+        "https://github.com/amodm/webbrowser-rs'b^c&d",
+    ];
+
+    /// Places a fake `exe` in a temp dir, puts only that dir on PATH, opens `url`
+    /// via try_wsl(), and returns the argv the fake exe received.
+    fn record_wsl_argv(exe: &str, url: &str) -> Vec<String> {
+        let dir = PathBuf::from(get_temp_path(&format!("wsl_{exe}"), "dir"));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(&dir).unwrap();
+        let flag = dir.join("argv");
+        let exe_path = dir.join(exe);
+        std::fs::write(
+            &exe_path,
+            format!(
+                "#!/bin/sh\nfor arg in \"$@\"; do echo \"$arg\"; done > \"{}\"\n",
+                flag.display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&exe_path, std::fs::Permissions::from_mode(0o755)).unwrap();
+
+        let prev_path = std::env::var_os("PATH");
+        std::env::set_var("PATH", &dir);
+        let target = TargetType::try_from(url).expect("bad url");
+        let result = try_wsl(&BrowserOptions::default(), &target);
+        match prev_path {
+            Some(p) => std::env::set_var("PATH", p),
+            None => std::env::remove_var("PATH"),
+        }
+        assert!(result.is_ok(), "{exe} failed for {url}: {result:?}");
+
+        let mut recorded = None;
+        for _ in 0..20 {
+            if let Ok(s) = std::fs::read_to_string(&flag) {
+                recorded = Some(s);
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(100));
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+        recorded
+            .expect("argv not recorded")
+            .lines()
+            .map(String::from)
+            .collect()
+    }
+
+    fn base64_decode(s: &str) -> Vec<u8> {
+        const T: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        let mut bits = 0u32;
+        let mut n = 0;
+        let mut out = Vec::new();
+        for c in s.bytes().filter(|&c| c != b'=') {
+            bits = (bits << 6) | T.iter().position(|&t| t == c).unwrap() as u32;
+            n += 6;
+            if n >= 8 {
+                n -= 8;
+                out.push((bits >> n) as u8);
+            }
+        }
+        out
+    }
+
+    #[test]
+    fn test_base64() {
+        for (i, o) in [
+            ("", ""),
+            ("f", "Zg=="),
+            ("fo", "Zm8="),
+            ("foo", "Zm9v"),
+            ("foob", "Zm9vYg=="),
+        ] {
+            assert_eq!(base64_encode(i.as_bytes()), o);
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_wsl_rundll32_gets_url_verbatim() {
+        for url in PAYLOADS {
+            let parsed: &str = &TargetType::try_from(*url).unwrap();
+            assert_eq!(
+                record_wsl_argv("rundll32.exe", url),
+                vec!["url.dll,FileProtocolHandler", parsed]
+            );
+        }
+    }
+
+    #[test]
+    #[serial]
+    fn test_wsl_powershell_never_sees_url() {
+        for url in PAYLOADS {
+            let parsed: &str = &TargetType::try_from(*url).unwrap();
+            let argv = record_wsl_argv("powershell.exe", url);
+            assert_eq!(argv.len(), 5, "{argv:?}");
+            assert_eq!(
+                argv[..4],
+                [
+                    "-NoLogo",
+                    "-NoProfile",
+                    "-NonInteractive",
+                    "-EncodedCommand"
+                ]
+            );
+            let enc = &argv[4];
+            assert!(enc
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b"+/=".contains(&b)));
+
+            let raw = base64_decode(enc);
+            let u16s: Vec<u16> = raw
+                .chunks(2)
+                .map(|c| u16::from_le_bytes([c[0], c[1]]))
+                .collect();
+            let script = String::from_utf16(&u16s).unwrap();
+            let expected = format!("Start-Process -FilePath '{}'", parsed.replace('\'', "''"));
+            assert_eq!(script, expected);
+        }
     }
 }

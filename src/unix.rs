@@ -570,6 +570,7 @@ static TEXT_BROWSERS: [&str; 9] = [
 #[cfg(test)]
 mod tests_xdg {
     use super::*;
+    use serial_test::serial;
     use std::fs::File;
     use std::io::Write;
 
@@ -582,6 +583,7 @@ mod tests_xdg {
             .expect("failed to convert into string")
     }
 
+    #[serial]
     #[test]
     fn test_xdg_open_local_file() {
         let _ = env_logger::try_init();

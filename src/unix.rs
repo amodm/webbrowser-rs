@@ -644,8 +644,9 @@ Exec=/bin/ls
         );
 
         // we need to wait until the flag file shows up due to the async
-        // nature of browser invocation
-        for _ in 0..10 {
+        // nature of browser invocation; slow machines (e.g. Debian i386
+        // CI) can take more than 5s, so allow up to 30s
+        for _ in 0..60 {
             if std::fs::read_to_string(&flag_path).is_ok() {
                 break;
             }

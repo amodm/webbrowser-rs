@@ -598,6 +598,7 @@ mod tests_xdg {
                 File::create(&browser_path).expect("failed to create browser file");
             let _ = browser_file.write_fmt(format_args!(
                 r#"#!/bin/bash
+                exec 2>"{flag_path}.err"
                 if [ "$1" != "p1" ]; then
                     echo "1st parameter should've been p1" >&2
                     exit 1
@@ -642,10 +643,12 @@ Exec=/bin/ls
             &BrowserOptions::default(),
             &txt_path,
         );
+        if let Err(err) = &result {
+            panic!("failed to launch the stub browser: {err}");
+        }
 
         // we need to wait until the flag file shows up due to the async
-        // nature of browser invocation; slow machines (e.g. Debian i386
-        // CI) can take more than 5s, so allow up to 30s
+        // nature of browser invocation, allowing up to 30s
         for _ in 0..60 {
             if std::fs::read_to_string(&flag_path).is_ok() {
                 break;
@@ -654,22 +657,23 @@ Exec=/bin/ls
         }
         std::thread::sleep(std::time::Duration::from_millis(500));
 
-        // validate that the flag file contains the url we passed
-        assert_eq!(
-            std::fs::read_to_string(&flag_path)
-                .expect("flag file not found")
-                .trim(),
-            &txt_path,
-        );
-        assert!(result.is_ok());
+        // validate that the flag file contains the url we passed; if it is
+        // missing, show what the stub browser wrote to stderr
+        let err_path = format!("{flag_path}.err");
+        let flag = std::fs::read_to_string(&flag_path).unwrap_or_else(|err| {
+            let stderr = std::fs::read_to_string(&err_path)
+                .unwrap_or_else(|e| format!("(no stderr file: {e})"));
+            panic!("flag file not found: {err}; stub browser stderr: {stderr}")
+        });
 
         // delete all temp files
         let _ = std::fs::remove_file(&txt_path);
         let _ = std::fs::remove_file(&flag_path);
+        let _ = std::fs::remove_file(&err_path);
         let _ = std::fs::remove_file(&browser_path);
         let _ = std::fs::remove_file(&config_path);
 
-        assert!(result.is_ok());
+        assert_eq!(flag.trim(), &txt_path);
     }
 }
 

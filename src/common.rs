@@ -63,7 +63,7 @@ fn reap_in_background(mut child: Child) {
 }
 
 #[cfg(not(unix))]
-fn reap_in_background(child: Child) {}
+fn reap_in_background(_child: Child) {}
 
 /// Run the specified command in foreground/background
 pub(crate) fn run_command(

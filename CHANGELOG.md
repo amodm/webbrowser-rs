@@ -3,6 +3,11 @@
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.2.7] - 2026-11-11 <a name="1.2.7"></a>
+### Fixed
+- Fix utf-8 token boundaries. See #128
+- Unix: reap child processes greedily. See #126
+
 ## [1.2.6] - 2026-10-31 <a name="1.2.6"></a>
 ### Fixed
 - WSL2: fix command injection vulnerability. See advisory ghsa-j2mc-vg6q-w75p
@@ -255,7 +260,8 @@ executable. This was reported privately by [@offalltn](https://github.com/offall
 ### Added
 - Initial release.
 
-[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.6...HEAD
+[Unreleased]: https://github.com/amodm/webbrowser-rs/compare/v1.2.7...HEAD
+[1.2.7]: https://github.com/amodm/webbrowser-rs/compare/v1.2.6...v1.2.7
 [1.2.6]: https://github.com/amodm/webbrowser-rs/compare/v1.2.5...v1.2.6
 [1.2.5]: https://github.com/amodm/webbrowser-rs/compare/v1.2.4...v1.2.5
 [1.2.4]: https://github.com/amodm/webbrowser-rs/compare/v1.2.3...v1.2.4

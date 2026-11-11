@@ -34,7 +34,7 @@ where
             }
             _ => {
                 if start.is_none() {
-                    start = Some(idx - 1);
+                    start = Some(idx - ch.len_utf8());
                 }
             }
         }
@@ -104,6 +104,60 @@ pub(crate) fn run_command(
                 Err(Error::other("command present but exited unsuccessfully"))
             }
         })
+    }
+}
+
+#[cfg(test)]
+mod token_tests {
+    use super::for_each_token;
+
+    fn tokenize(line: &str) -> Vec<String> {
+        let mut tokens = Vec::new();
+        for_each_token(line, |token| tokens.push(token.to_owned()));
+        tokens
+    }
+
+    #[test]
+    fn test_for_each_token_utf8_boundaries() {
+        let cases: &[(&str, &[&str])] = &[
+            ("éclair arg", &["éclair", "arg"]),
+            ("浏览器 arg", &["浏览器", "arg"]),
+            ("🦊fox arg", &["🦊fox", "arg"]),
+            ("browser 用户", &["browser", "用户"]),
+            ("browser héllo", &["browser", "héllo"]),
+            (
+                "  浏览器  \"默认 配置\" 🦊 ",
+                &["浏览器", "默认 配置", "🦊"],
+            ),
+            (
+                "\"C:\\Program Files\\浏览器.exe\" 用户 \"%1\"",
+                &["C:\\Program Files\\浏览器.exe", "用户", "%1"],
+            ),
+            ("", &[]),
+            ("  browser  \"%1\"  ", &["browser", "%1"]),
+            ("browser \"\"", &["browser", ""]),
+        ];
+
+        for &(line, expected) in cases {
+            assert_eq!(tokenize(line), expected, "input: {line:?}");
+        }
+    }
+
+    #[test]
+    fn test_for_each_token_localized_powershell_warning() {
+        let line = "WARNING: (0) : 未指定源文件\n\n(1) : using System;";
+        assert_eq!(
+            tokenize(line),
+            [
+                "WARNING:",
+                "(0)",
+                ":",
+                "未指定源文件\n\n(1)",
+                ":",
+                "using",
+                "System;",
+            ]
+        );
     }
 }
 

@@ -844,17 +844,12 @@ mod wsl {
     /// Converts a windows path to linux `PathBuf`
     fn wsl_path_win2lin(wc: &WindowsConfig, path: &str) -> Result<PathBuf> {
         let err_fn = || Error::new(ErrorKind::NotFound, "invalid windows path");
-        if path.len() > 3 {
-            let pfx = &path[..3];
-            if matches!(pfx, "C:\\" | "c:\\") {
-                let win_path = path[3..].replace('\\', "/");
-                Ok(wc.root.join(win_path))
-            } else {
-                Err(err_fn())
-            }
-        } else {
-            Err(err_fn())
-        }
+        let rest = path
+            .strip_prefix("C:\\")
+            .or_else(|| path.strip_prefix("c:\\"))
+            .filter(|rest| !rest.is_empty())
+            .ok_or_else(err_fn)?;
+        Ok(wc.root.join(rest.replace('\\', "/")))
     }
 
     /// Converts a linux path to windows. We using `String` instead of `OsString` as

@@ -403,6 +403,14 @@ impl Display for TargetType {
     }
 }
 
+impl std::str::FromStr for TargetType {
+    type Err = Error;
+
+    fn from_str(value: &str) -> std::result::Result<Self, Self::Err> {
+        TargetType::try_from(value)
+    }
+}
+
 impl std::convert::TryFrom<&str> for TargetType {
     type Error = Error;
 

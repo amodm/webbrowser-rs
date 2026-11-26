@@ -612,7 +612,10 @@ mod tests_xdg {
                     exit 1
                 fi
 
-                echo "$2" > "{flag_path}"
+                # write to a temp file and rename it into place, so that the
+                # reader never sees a partially written flag file
+                echo "$2" > "{flag_path}.tmp"
+                mv "{flag_path}.tmp" "{flag_path}"
             "#
             ));
             let mut perms = browser_file
@@ -1058,7 +1061,10 @@ mod tests_browser_env {
             browser_file
                 .write_fmt(format_args!(
                     r#"#!/bin/sh
-for arg in "$@"; do echo "$arg"; done > "{flag_path}"
+# write to a temp file and rename it into place, so that the reader never sees a
+# partially written flag file
+for arg in "$@"; do echo "$arg"; done > "{flag_path}.tmp"
+mv "{flag_path}.tmp" "{flag_path}"
 "#
                 ))
                 .expect("failed to write browser file");
@@ -1178,11 +1184,21 @@ mod tests_wsl_http {
         std::fs::create_dir_all(&dir).unwrap();
         let flag = dir.join("argv");
         let exe_path = dir.join(exe);
+        // The fake exe writes to a temp file and renames it into place, so that the
+        // reader never sees a partially written argv file. It gets spawned with only
+        // `dir` on PATH, so restore the original PATH inside it to be able to run `mv`.
+        let orig_path = std::env::var("PATH")
+            .unwrap_or_default()
+            .replace('\'', "'\\''");
+        let flag_path = flag.display();
         std::fs::write(
             &exe_path,
             format!(
-                "#!/bin/sh\nfor arg in \"$@\"; do echo \"$arg\"; done > \"{}\"\n",
-                flag.display()
+                r#"#!/bin/sh
+PATH='{orig_path}'
+for arg in "$@"; do echo "$arg"; done > "{flag_path}.tmp"
+mv "{flag_path}.tmp" "{flag_path}"
+"#
             ),
         )
         .unwrap();

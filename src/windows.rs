@@ -1,4 +1,4 @@
-use crate::common::{for_each_token, run_command};
+use crate::common::{for_each_windows_token, run_command};
 use crate::{Browser, BrowserOptions, Error, ErrorKind, Result, TargetType};
 use log::trace;
 use std::path::Path;
@@ -103,10 +103,14 @@ fn ensure_cmd_quotes(cmdline: &str) -> String {
     if !cmdline.starts_with('"') {
         let mut end = 0;
         for (idx, ch) in cmdline.char_indices() {
+            if ch == '"' {
+                // quotes cannot appear in a Windows path; we are past the exe name
+                break;
+            }
             if ch == ' ' {
                 // does the path till now look like a valid exe?
                 let potential_exe = Path::new(&cmdline[..idx]);
-                if potential_exe.exists() {
+                if potential_exe.is_file() {
                     end = idx;
                     break;
                 }
@@ -126,7 +130,7 @@ fn ensure_cmd_quotes(cmdline: &str) -> String {
 fn get_browser_cmd(cmdline: &str, url: &TargetType) -> Result<Command> {
     let url_arg = unc_aware_url_arg(url);
     let mut tokens: Vec<String> = Vec::new();
-    for_each_token(cmdline, |token: &str| {
+    for_each_windows_token(cmdline, |token: &str| {
         if matches!(token, "%0" | "%1") {
             tokens.push(url_arg.clone());
         } else {
@@ -197,5 +201,30 @@ mod tests {
         let target = TargetType::try_from("https://github.com/amodm/webbrowser-rs")
             .expect("failed to parse url");
         assert_eq!(unc_aware_url_arg(&target), target.to_string());
+    }
+
+    /// Browser commands containing quoted flag values (such as Scoop-installed browsers with
+    /// `--user-data-dir="...\User Data"`) must preserve the full `--flag=value` argument.
+    /// See issue #130.
+    #[test]
+    fn quoted_flag_value_in_browser_cmd() {
+        let cmdline = r#""C:\Users\User\scoop\apps\helium\current\chrome.exe" --user-data-dir="C:\Users\User\scoop\persist\helium\User Data" --single-argument %1"#;
+        let url_str = "https://github.com/amodm/webbrowser-rs";
+        let target = TargetType::try_from(url_str).expect("failed to parse url");
+        let cmd = get_browser_cmd(cmdline, &target).expect("failed to build command");
+
+        assert_eq!(
+            cmd.get_program(),
+            r"C:\Users\User\scoop\apps\helium\current\chrome.exe"
+        );
+        let args: Vec<_> = cmd.get_args().collect();
+        assert_eq!(
+            args,
+            [
+                r"--user-data-dir=C:\Users\User\scoop\persist\helium\User Data",
+                "--single-argument",
+                url_str,
+            ]
+        );
     }
 }

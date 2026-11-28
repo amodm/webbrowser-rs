@@ -2,45 +2,72 @@ use super::{BrowserOptions, Error, Result};
 use log::debug;
 use std::process::{Child, Command, Stdio};
 
-/// Parses `line` to find tokens (including quoted strings), and invokes `op`
-/// on each token
-pub(crate) fn for_each_token<F>(line: &str, mut op: F)
+/// Parses a Windows command line `line` into tokens following Windows command-line quoting rules
+/// (`CommandLineToArgvW` / UCRT), and invokes `op` on each token.
+///
+/// This lives in `common` rather than `windows` because it is shared by both the native Windows
+/// implementation (`windows.rs`) and the WSL `file://` handler (`unix.rs::wsl`), which runs on
+/// Linux (`#[cfg(target_os = "linux")]`) and also parses Windows registry browser commands.
+pub(crate) fn for_each_windows_token<F>(line: &str, mut op: F)
 where
     F: FnMut(&str),
 {
-    let mut start: Option<usize> = None;
+    let mut token = String::new();
     let mut in_quotes = false;
-    let mut idx = 0;
-    for ch in line.chars() {
-        idx += ch.len_utf8();
+    let mut in_token = false;
+    let mut slashes = 0usize;
+    let mut chars = line.chars().peekable();
+
+    while let Some(ch) = chars.next() {
         match ch {
-            '"' => {
-                if let Some(start_idx) = start {
-                    op(&line[start_idx..idx - 1]);
-                    start = None;
-                    in_quotes = false;
-                } else {
-                    start = Some(idx);
-                    in_quotes = true;
-                }
+            '\\' => {
+                slashes += 1;
+                in_token = true;
             }
-            ' ' => {
-                if !in_quotes {
-                    if let Some(start_idx) = start {
-                        op(&line[start_idx..idx - 1]);
-                        start = None;
+            '"' => {
+                for _ in 0..(slashes / 2) {
+                    token.push('\\');
+                }
+                if slashes & 1 == 0 {
+                    if in_quotes && chars.peek() == Some(&'"') {
+                        chars.next();
+                        token.push('"');
+                    } else {
+                        in_quotes = !in_quotes;
                     }
+                } else {
+                    token.push('"');
+                }
+                slashes = 0;
+                in_token = true;
+            }
+            ' ' | '\t' if !in_quotes => {
+                for _ in 0..slashes {
+                    token.push('\\');
+                }
+                slashes = 0;
+                if in_token {
+                    op(&token);
+                    token.clear();
+                    in_token = false;
                 }
             }
             _ => {
-                if start.is_none() {
-                    start = Some(idx - ch.len_utf8());
+                for _ in 0..slashes {
+                    token.push('\\');
                 }
+                slashes = 0;
+                token.push(ch);
+                in_token = true;
             }
         }
     }
-    if let Some(start_idx) = start {
-        op(&line[start_idx..idx]);
+
+    for _ in 0..slashes {
+        token.push('\\');
+    }
+    if in_token {
+        op(&token);
     }
 }
 
@@ -109,11 +136,11 @@ pub(crate) fn run_command(
 
 #[cfg(test)]
 mod token_tests {
-    use super::for_each_token;
+    use super::for_each_windows_token;
 
     fn tokenize(line: &str) -> Vec<String> {
         let mut tokens = Vec::new();
-        for_each_token(line, |token| tokens.push(token.to_owned()));
+        for_each_windows_token(line, |token| tokens.push(token.to_owned()));
         tokens
     }
 
@@ -158,6 +185,127 @@ mod token_tests {
                 "System;",
             ]
         );
+    }
+
+    #[test]
+    fn test_for_each_token_quoted_flag_values_and_escapes() {
+        let cases: &[(&str, &[&str])] = &[
+            // Scoop / Chromium quoted flag value with spaces (issue #130)
+            (
+                r#""C:\Users\User\scoop\apps\helium\current\chrome.exe" --user-data-dir="C:\Users\User\scoop\persist\helium\User Data" --single-argument %1"#,
+                &[
+                    r"C:\Users\User\scoop\apps\helium\current\chrome.exe",
+                    r"--user-data-dir=C:\Users\User\scoop\persist\helium\User Data",
+                    "--single-argument",
+                    "%1",
+                ],
+            ),
+            (
+                r#""C:\chrome.exe" --user-data-dir="C:\Scoop\UserData" "%1""#,
+                &[r"C:\chrome.exe", r"--user-data-dir=C:\Scoop\UserData", "%1"],
+            ),
+            // Quoted directory path ending in escaped trailing backslash (`\\"`)
+            (
+                r#""C:\chrome.exe" --user-data-dir="C:\Users\User\User Data\\" %1"#,
+                &[
+                    r"C:\chrome.exe",
+                    r"--user-data-dir=C:\Users\User\User Data\",
+                    "%1",
+                ],
+            ),
+            // Escaped quotes `\"` inside a quoted flag value must NOT split on inner spaces
+            (
+                r#"wrapper.exe --args="--profile \"Work Profile\" --incognito" %1"#,
+                &[
+                    "wrapper.exe",
+                    r#"--args=--profile "Work Profile" --incognito"#,
+                    "%1",
+                ],
+            ),
+            // Doubled quotes `""` inside a quoted flag value
+            (
+                r#"wrapper.exe --title="My ""Cool"" Browser" %1"#,
+                &["wrapper.exe", r#"--title=My "Cool" Browser"#, "%1"],
+            ),
+            // Tab-delimited arguments
+            (
+                "\"C:\\Program Files\\browser.exe\"\t--flag=\"a b\"\t%1",
+                &[r"C:\Program Files\browser.exe", "--flag=a b", "%1"],
+            ),
+            (r#"browser --opt="" %1"#, &["browser", "--opt=", "%1"]),
+            (
+                r#"browser --opt="hello world"-"foo bar" %1"#,
+                &["browser", "--opt=hello world-foo bar", "%1"],
+            ),
+            (
+                r#"cmd.exe /c start "" "%1""#,
+                &["cmd.exe", "/c", "start", "", "%1"],
+            ),
+            (r"browser C:\Temp\ %1", &["browser", r"C:\Temp\", "%1"]),
+            (r"browser C:\Temp\", &["browser", r"C:\Temp\"]),
+        ];
+
+        for &(line, expected) in cases {
+            assert_eq!(tokenize(line), expected, "input: {line:?}");
+        }
+    }
+
+    /// Verify lossless round-trip against Rust std's Windows `Command` argument encoder.
+    #[test]
+    fn test_win32_roundtrip_idempotence() {
+        fn win32_encode_args(args: &[&str]) -> String {
+            let mut cmd = String::new();
+            for (i, arg) in args.iter().enumerate() {
+                if i > 0 {
+                    cmd.push(' ');
+                }
+                let quote =
+                    arg.is_empty() || arg.bytes().any(|c| c == b' ' || c == b'\t' || c == b'"');
+                if quote {
+                    cmd.push('"');
+                }
+                let mut backslashes = 0usize;
+                for ch in arg.chars() {
+                    if ch == '\\' {
+                        backslashes += 1;
+                    } else {
+                        if ch == '"' {
+                            for _ in 0..(backslashes + 1) {
+                                cmd.push('\\');
+                            }
+                        } else {
+                            for _ in 0..backslashes {
+                                cmd.push('\\');
+                            }
+                        }
+                        backslashes = 0;
+                        cmd.push(ch);
+                    }
+                }
+                if quote {
+                    for _ in 0..(backslashes * 2) {
+                        cmd.push('\\');
+                    }
+                    cmd.push('"');
+                } else {
+                    for _ in 0..backslashes {
+                        cmd.push('\\');
+                    }
+                }
+            }
+            cmd
+        }
+
+        let args = &[
+            r"C:\Program Files\Wrapper\run.exe",
+            r"--dir=C:\Trailing Slash\",
+            r#"--nested=--flag "value with spaces" --injected"#,
+            r#"about:blank" --gpu-launcher=calc"#,
+            "",
+            r"\\server\share\path\",
+        ];
+        let encoded = win32_encode_args(args);
+        assert_eq!(tokenize(&encoded), args, "encoded: {encoded}");
     }
 }
 

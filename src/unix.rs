@@ -692,7 +692,7 @@ Exec=/bin/ls
     not(feature = "disable-wsl")
 ))]
 mod wsl {
-    use crate::common::for_each_token;
+    use crate::common::for_each_windows_token;
     use crate::{Result, TargetType};
     use std::io::{Error, ErrorKind};
     use std::path::{Path, PathBuf};
@@ -809,7 +809,7 @@ mod wsl {
         let mut tokens: Vec<String> = Vec::new();
         let filepath = wsl_get_filepath_from_url(wc, url)?;
         let fp = &filepath;
-        for_each_token(cmdline, |token: &str| {
+        for_each_windows_token(cmdline, |token: &str| {
             if matches!(token, "%0" | "%1") {
                 tokens.push(fp.to_owned());
             } else {
